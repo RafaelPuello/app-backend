@@ -1,0 +1,25 @@
+{% load static wagtailcore_tags wagtailimages_tags %}
+
+<div role="listitem" class="w-dyn-item">
+  <div class="block-post {{ miniview_css_class }}">
+    {% if page.cover_image %}
+    {% image page.cover_image fill-800x450 format-webp preserve-svg as card_img %}
+    <a href="{% pageurl page %}" title="{{ page.title }}" class="link-post-thumbnail {{ miniview_css_class }} w-inline-block">
+      <img loading="eager" class="image-post-thumbnail {{ miniview_css_class }}" src="{{ card_img.url }}" alt="{{ card_img.title }}">
+    </a>
+    {% else %}
+    <img loading="eager" class="image-post-thumbnail {{ miniview_css_class }}" src="{% static 'digidex/images/post-placeholder.svg' %}" alt="{{ page.title }}">
+    {% endif %}
+    <div class="post {{ miniview_css_class }}">
+      <div class="date">{{ page.seo_published_at|date }}</div>
+      <a href="{% pageurl page %}" class="link-heading-post {{ miniview_css_class }} w-inline-block">
+        <{{ h|default:"h4" }} class="heading-post">{{ page.title }}</{{ h|default:"h4" }}>
+      </a>
+      <p class="paragraph-post {{ miniview_css_class }}">{{ page.caption }}</p>
+      <a href="{% pageurl page %}" class="link-block w-inline-block">
+        <div class="text-link">Read more</div>
+        <div class="block-icon-link"><img src="{% static 'digidex/images/bx-arrow-to-right_green.svg' %}" loading="eager" alt="" class="icon-link"></div>
+      </a>
+    </div>
+  </div>
+</div>

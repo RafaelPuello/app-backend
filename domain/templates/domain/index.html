@@ -1,0 +1,59 @@
+{% extends "domain/base.html" %}
+{% load static %}
+
+{% block head_title %}Dashboard{% endblock head_title %}
+
+{% block content %}
+  <section class="section">
+    <div class="collection-list-wrapper-posts large w-dyn-list">
+      {% if queried_nfctag %}
+        <div role="list" class="collection-list-posts large w-dyn-items">
+          <div role="listitem" class="w-dyn-item">
+            <div class="block-post large">
+              <a href="#" class="link-post-thumbnail large w-inline-block">
+                <img loading="eager" alt="" src="{% static 'domain/images/directional/mark_black.png' %}" class="image-post-thumbnail large">
+              </a>
+              <div class="post large">
+                <div class="date"></div>
+                <a href="#" class="link-heading-post large w-inline-block">
+                  <h3 class="heading-post">{{ featured_nfctag.title }}</h3>
+                </a>
+                <p class="paragraph-post large"></p>
+                <div class="block-button">
+                  <a href="#" class="button w-button">View</a>
+                  <a href="/dashboard/{{ queried_nfctag.uuid }}/edit" class="button-outline w-button">Edit</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    <div class="collection-list-wrapper-posts w-dyn-list">
+      {% if nfctags %}
+        <div role="list" class="collection-list-posts w-dyn-items">
+          {% for nfctag in nfctags %}
+            <div role="listitem" class="w-dyn-item">
+              <div class="block-post">
+                <a href="{{ nfctag.uuid }}/" class="link-post-thumbnail w-inline-block">
+                  <img loading="eager" alt="" src="{% static 'domain/images/directional/mark_black.png' %}" class="image-post-thumbnail">
+                </a>
+                <div class="post">
+                  <div class="date"></div>
+                  <a href="{{ nfctag.uuid }}/" class="link-heading-post w-inline-block">
+                    <h3 class="heading-post">{{ nfctag.title }}</h3>
+                  </a>
+                  <p class="paragraph-post"></p>
+                  <div class="block-button">
+                    <a href="{{ nfctag.uuid }}/" class="button w-button">View</a>
+                    <a href="{{ nfctag.uuid }}/edit" class="button-outline w-button">Edit</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

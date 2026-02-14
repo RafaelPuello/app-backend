@@ -1,0 +1,23 @@
+{% extends "domain/base.html" %}
+
+{% block head_title %}NFCTag{% endblock head_title %}
+
+{% block content %}
+  <article class="content narrow">
+    <section class="section-top padding-0">
+      <div class="block-top">
+        <h1 class="heading-top">{{ page.title }}</h1>
+        <p class="paragraph-top blog-post">{{self.caption}}</p>
+      </div>
+    </section>
+    <div class="page-body">
+      {% if nfctag %}
+        {% include "domain/includes/body.html" with featured_nfctag=nfctag %}
+      {% endif %}
+      <div class="block-button">
+        <a href="#" class="button w-button">TBD</a>
+        <a href="edit" class="button-outline w-button">Edit Plant</a>
+      </div>
+    </div>
+  </article>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block custom_assets %}
+<link rel="stylesheet" href="{% static 'domain/css/nfctags.css' %}">
+{% endblock %}
+
+{% block navbar %}
+<a href="/dashboard/" class="brand-center w-nav-brand">
+  <img src="{% static 'base/images/logo.png' %}" alt="logo" class="logo" aria-hidden="true" decoding="async">
+</a>
+{% endblock %}
+
+{% block body %}
+  <main style="opacity:0" class="content narrow"> 
+    {% block content %}
+    {% endblock %}
+  </main>
+{% endblock %}

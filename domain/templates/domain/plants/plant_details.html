@@ -1,0 +1,74 @@
+{% extends "botany/base.html" %}
+{% load i18n %}
+
+{% block head_title %}{{ plant.canonicalName }}{% endblock head_title %}
+
+{% block body %}
+  <article class="content narrow">
+    {% block article_header %}
+    <section class="section-top padding-0">
+      <div class="block-top">
+        <span class="date-top">{{ plant.scientificName }}</span>
+        <h1 class="heading-top">{{ plant.canonicalName }}</h1>
+        <p class="paragraph-top blog-post">{{ plant.taxonomicStatus }}</p>
+        <p class="paragraph-top blog-post">
+          {% if plant.authorship %}
+          <span class="author-top">{{ plant.authorship }}</span>
+          {% endif %}
+        </p>
+      </div>
+    </section>
+    {% endblock %}
+
+    {% block article_body %}
+      <section class="section">
+        <div class="post-body">
+          <div class="rich-text-block w-richtext">
+            <ul>
+              <li><strong>Kingdom:</strong> {{ plant.kingdom }}</li>
+              <li><strong>Phylum:</strong> {{ plant.phylum }}</li>
+              <li><strong>Class:</strong> {{ plant.class }}</li>
+              <li><strong>Order:</strong> {{ plant.order }}</li>
+              <li><strong>Family:</strong> {{ plant.family }}</li>
+              <li><strong>Genus:</strong> {{ plant.genus }}</li>
+            </ul>
+            <ul>
+              <li><strong>Taxonomic Status:</strong> {{ plant.taxonomicStatus }}</li>
+              <li><strong>Published In:</strong> {{ plant.publishedIn }}</li>  
+              <li><strong>Name Type:</strong> {{ plant.nameType }}</li>
+              <li><strong>Rank:</strong> {{ plant.rank }}</li>  
+              <li><strong>Parent:</strong> {{ plant.parent }}</li>  
+              <li><strong>Origin:</strong> {{ plant.origin }}</li>  
+              <li><strong>Remarks:</strong> {{ plant.remarks }}</li>  
+              <li><strong>Number of Descendants:</strong> {{ plant.numDescendants }}</li>  
+              <li><strong>Issues:</strong> {{ plant.issues }}</li>  
+            </ul>
+          </div>
+        </div>
+      </section>
+    {% endblock %}
+
+    {% block related_content %}
+      <section class="section">
+        <div class="block-top">
+          <h2 class="heading">{% trans "Related" %}</h2>
+          <div class="collection-list-wrapper-posts">
+            {% if related_plants %}
+              <div role="list" class="collection-list-posts">
+                {% for rp in related_plants %}
+                  <div role="listitem" class="w-dyn-item">
+                    {% include 'website/pages/page_mini.html' with page=rp miniview_css_class="" %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="empty-state w-dyn-empty">
+                <div class="text-empty">{% trans "No related plants found" %}.</div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+    {% endblock %}
+  </article>
+{% endblock %}

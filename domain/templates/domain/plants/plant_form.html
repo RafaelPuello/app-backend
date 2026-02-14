@@ -1,0 +1,37 @@
+{% extends "botany/base.html" %}
+
+{% block head_title %}Edit Plant{% endblock head_title %}
+
+{% block content %}
+  <section class="section">
+    <div class="page-body">
+      <h2>Edit Plant</h2>
+      {% if form %}
+        <form id="plant-form" name="plant-form" data-name="Plant Form" action="/dashboard/{{plant_uuid}}/edit" method="post" class="utility-page-form" data-wf-page-id="65b171706d216e500e94173a" data-wf-element-id="65177b724cf3869a524f959d00000000000c">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="{{ form.name.id_for_label }}" class="field-label w-password-page"> {{ form.name.label }} </label>
+            {{ form.name }}
+            <div class="error-message w-password-page w-form-fail">
+              {% for error in form.name.errors %}
+                <p class="text-error">{{ error }}</p>
+              {% endfor %}
+            </div>
+          </div>
+        
+          <div class="form-group">
+            <label for="{{ form.description.id_for_label }}" class="field-label w-password-page"> {{ form.description.label }} </label>
+            {{ form.description }}
+            <div class="error-message w-password-page w-form-fail">
+              {% for error in form.description.errors %}
+              <p class="text-error">{{ error }}</p>
+              {% endfor %}
+            </div>
+          </div>
+        
+          <button type="submit" name="action" value="Submit" class="button-submit">Submit</button>
+        </form>
+        {% endif %}
+    </div>
+  </section>
+{% endblock %}

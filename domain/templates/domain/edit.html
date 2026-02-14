@@ -1,0 +1,26 @@
+{% extends "domain/base.html" %}
+
+{% block head_title %}Edit NFCTag{% endblock head_title %}
+
+{% block content %}
+  <section class="section">
+    <div class="page-body">
+      <h2>Edit Plant Label</h2>
+      {% if form %}
+        <form id="nfctag-form" name="nfctag-form" data-name="NFCTag Form" action="/dashboard/{{nfctag_uuid}}/edit" method="post" class="utility-page-form">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="{{ form.title.id_for_label }}" class="field-label w-password-page"> {{ form.title.label }} </label>
+            {{ form.title }}
+            <div class="error-message w-password-page w-form-fail">
+              {% for error in form.title.errors %}
+                <p class="text-error">{{ error }}</p>
+              {% endfor %}
+            </div>
+          </div>
+          <button type="submit" name="action" value="Submit" class="button-submit">Submit</button>
+        </form>
+        {% endif %}
+    </div>
+  </section>
+{% endblock %}

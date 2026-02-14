@@ -1,0 +1,69 @@
+{% extends "botany/base.html" %}
+{% load i18n wagtailimages_tags %}
+
+{% block head_title %}Occurrences{% endblock head_title %}
+
+{% block content_pre_body %}
+  {% if self.cover_image %}
+    {% image page.cover_image fill-1600x900 format-webp as cover_image %}
+    <div class="hero-bg mb-5" style="background-image:url({{cover_image.url}});">
+      <div class="hero-fg">
+          <div class="d-flex justify-content-center">
+          <h1 class="text-shadow text-white">{{page.title}}</h1>
+          </div>
+      </div>
+    </div>
+  {% else %}
+    <section class="section-top">
+      <div class="block-top">
+        <h1 class="heading-top">{{page.title}}</h1>
+        <p class="pagraph-top">{{page.specific.caption}}</p>
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}
+
+{% block body %}
+  <article class="content narrow">
+      {% block article_header %}
+        <section class="section-top padding-0">
+          <div class="block-top">
+            <h1 class="heading-top">Occurrences</h1>
+          </div>
+        </section>
+      {% endblock %}
+  
+      {% block article_body %}
+        <div class="post-body">
+          <div class="rich-text-block w-richtext">
+            <table>
+              <thead>
+                <tr>
+                  <th>Media</th>
+                  <th>License</th>
+                  <th>Event Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for occ in occurrences %}
+                  <tr>
+                    <td>
+                      {% if occ.media %}
+                        {% for media_item in occ.media %}
+                          <img src="{{ media_item.identifier }}" alt="{{ occ.name }}" height="50" />
+                        {% endfor %}
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </td>
+                    <td>{{ occ.license }}</td>
+                    <td>{{ occ.eventDate }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endblock %}
+  </article>
+{% endblock %}

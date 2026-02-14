@@ -23,12 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--nzsdnoq36j(#1rl5m-ai#n*9bdpydk%52h-cna%un7t3wsk+e'
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost").split(",")
 
 
 # Application definition
@@ -40,14 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Django Allauth
-    "allauth",
-    "allauth.account",
-    'allauth.headless',
-    #'allauth.socialaccount',
-    #'allauth.mfa',
-    'allauth.usersessions',
+    'django.contrib.sites',
 ]
 
 MIDDLEWARE = [
@@ -58,12 +51,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "allauth.account.middleware.AccountMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 SITE_ID = 1
@@ -135,19 +126,4 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# Allauth settings
-
-ACCOUNT_ADAPTER = 'identity.adapter.IdentityAdapter'
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-ACCOUNT_EMAIL_VERIFICATION = 'none'
-#ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True
-#ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
-
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-
-HEADLESS_ONLY = True
-
-MFA_SUPPORTED_TYPES = ["totp", "recovery_codes", "webauthn"]
-MFA_PASSKEY_LOGIN_ENABLED = True
-MFA_PASSKEY_SIGNUP_ENABLED = False
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")

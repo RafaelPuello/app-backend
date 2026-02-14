@@ -1,0 +1,7 @@
+{% if collection_item %}
+  <a style="text-decoration: none;" href="{{ collection_item.uuid }}/">
+    <div id="{{ collection_item.uid }}" class="collection-item-nfctag">
+      <div class="title-color">{{ collection_item.uid }}</div>
+    </div>
+  </a>
+{% endif %}
