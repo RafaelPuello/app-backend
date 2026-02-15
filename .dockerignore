@@ -3,6 +3,8 @@
 /static/
 *.sqlite3
 
+config/keys/*
+
 # Python and others
 __pycache__
 *.pyc
