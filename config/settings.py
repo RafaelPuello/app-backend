@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 import dj_database_url
@@ -41,19 +42,21 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = [
+    'config.auth.JWTAuthenticationBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
@@ -127,3 +130,31 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+
+# JWT Authentication (token validation from ID service)
+# Load the ID service's RS256 public key for JWT validation
+_jwt_public_key_path = os.environ.get(
+    "JWT_PUBLIC_KEY_PATH",
+    BASE_DIR / "config" / "keys" / "jwt_public_key.pem"
+)
+
+try:
+    JWT_PUBLIC_KEY = open(_jwt_public_key_path).read().strip()
+except FileNotFoundError:
+    JWT_PUBLIC_KEY = None
+    # Will cause an error when JWT auth is attempted, which is correct behavior
+
+JWT_ALGORITHM = "RS256"
+JWT_ISSUER = os.environ.get("JWT_ISSUER", None)  # Optional issuer validation
+JWT_AUDIENCE = os.environ.get("JWT_AUDIENCE", None)  # Optional audience validation
+
+
+# CORS Configuration (for cross-origin API requests from frontend)
+CORS_ALLOWED_ORIGINS = [
+    "https://app.digidex.bio",
+    "https://www.app.digidex.bio",
+    "http://localhost:3000",  # Development
+    "http://localhost:3001",  # Development (alternate port)
+]
+CORS_ALLOW_CREDENTIALS = False  # JWT tokens are used, not cookies

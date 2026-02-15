@@ -1,7 +1,8 @@
-from allauth.headless.contrib.ninja.security import x_session_token_auth
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from ninja.errors import HttpError
+
+from config.auth import JWTAuthenticationBackend
 from ninja_extra import (
     api_controller,
     ControllerBase,
@@ -29,7 +30,7 @@ NFCTag = get_nfctag_model()
 @api_controller(
     "/nfctags",
     permissions=[IsAuthenticated],
-    auth=[x_session_token_auth],
+    auth=[JWTAuthenticationBackend()],
     tags=["App Domain - NFC Tags"],
 )
 class DomainController(ControllerBase):
