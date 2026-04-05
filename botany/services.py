@@ -1,8 +1,13 @@
 from typing import Any, Dict, List, Optional
 
 from django.conf import settings
-from kindwise import PlantApi, PlantIdentification, ClassificationLevel
 from pygbif import species, occurrences
+
+try:
+    from kindwise import PlantApi, PlantIdentification, ClassificationLevel
+    _KINDWISE_AVAILABLE = True
+except ImportError:
+    _KINDWISE_AVAILABLE = False
 
 from .utils import resolve_gbif_id
 
@@ -136,6 +141,11 @@ def get_plant_summary(
 
 class KindwiseService:
     def __init__(self):
+        if not _KINDWISE_AVAILABLE:
+            raise ImportError(
+                "kindwise package is required for plant identification. "
+                "Install it with: pip install kindwise"
+            )
         self.api_key = settings.KINDWISE_API_KEY
         self.api = PlantApi(api_key=self.api_key)
 

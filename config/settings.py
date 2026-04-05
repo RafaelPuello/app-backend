@@ -43,6 +43,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'corsheaders',
+    'ninja_extra',
+    'domain',
+    'nfctags',
+    'botany',
 ]
 
 MIDDLEWARE = [
@@ -151,10 +155,21 @@ JWT_AUDIENCE = os.environ.get("JWT_AUDIENCE", None)  # Optional audience validat
 
 
 # CORS Configuration (for cross-origin API requests from frontend)
+# Frontend is now served at digidex.bio/app/ (subdirectory routing, no subdomain)
 CORS_ALLOWED_ORIGINS = [
-    "https://app.digidex.bio",
-    "https://www.app.digidex.bio",
+    "https://digidex.bio",
+    "https://www.digidex.bio",
     "http://localhost:3000",  # Development
     "http://localhost:3001",  # Development (alternate port)
+    "http://localhost:10000",  # Development via Traefik
+    "http://10.0.0.218:10000",  # Development via Traefik (LAN)
 ]
 CORS_ALLOW_CREDENTIALS = False  # JWT tokens are used, not cookies
+
+# CSRF Trusted Origins (for requests from same-origin subdirectory frontend)
+CSRF_TRUSTED_ORIGINS = [
+    "https://digidex.bio",
+    "https://www.digidex.bio",
+    "http://localhost:10000",
+    "http://10.0.0.218:10000",
+]

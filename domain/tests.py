@@ -53,7 +53,7 @@ def test_list_parity(client, django_user_model):
 
     # API list (uses JWT token in Authorization header)
     token = create_test_jwt_token(user)
-    resp_api = client.get("/api/nfctags?limit=100", HTTP_AUTHORIZATION=f"Bearer {token}")
+    resp_api = client.get("/app/api/nfctags?limit=100", HTTP_AUTHORIZATION=f"Bearer {token}")
     assert resp_api.status_code == 200
     api_items = {i["uuid"] for i in resp_api.json()["items"]}
 
@@ -69,13 +69,13 @@ def test_detail_parity(client, django_user_model):
     tag = service.create_tag(uid="CCC")
 
     # HTML detail view (uses session auth via @login_required)
-    resp_html = client.get(reverse("domain:view_nfctag", args=[str(tag.uuid)]))
+    resp_html = client.get(reverse("domain:detail_nfctag", args=[str(tag.uuid)]))
     assert resp_html.status_code == 200
     html_uuid = str(resp_html.context["nfctag"].uuid)
 
     # API detail (uses JWT token in Authorization header)
     token = create_test_jwt_token(user)
-    resp_api = client.get(f"/api/nfctags/{tag.uuid}", HTTP_AUTHORIZATION=f"Bearer {token}")
+    resp_api = client.get(f"/app/api/nfctags/{tag.uuid}", HTTP_AUTHORIZATION=f"Bearer {token}")
     assert resp_api.status_code == 200
     api_uuid = resp_api.json()["uuid"]
 

@@ -6,7 +6,9 @@ Django==6.0.2
 django-cors-headers==4.9.0
 django-modelcluster==6.4.1
 django-ninja==1.5.3
-PyJWT==2.10.1
+django-ninja-extra==0.22.9
+pygbif==0.6.6
+PyJWT==2.12.1
 pydantic==2.12.5
 pydantic_core==2.41.5
 sqlparse==0.5.5
