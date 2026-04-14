@@ -31,6 +31,15 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost").split(",")
 
+if DEBUG:
+    ALLOWED_HOSTS = [
+        'localhost',
+        '127.0.0.1',
+        '10.0.0.218',
+        'digidex.lan',
+        '*.digidex.lan',
+    ]
+
 
 # Application definition
 
@@ -163,6 +172,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3001",  # Development (alternate port)
     "http://localhost:10000",  # Development via Traefik
     "http://10.0.0.218:10000",  # Development via Traefik (LAN)
+    "http://digidex.lan",  # Development via digidex.lan
+    "http://app.digidex.lan",  # Development via digidex.lan (app subdomain)
 ]
 CORS_ALLOW_CREDENTIALS = False  # JWT tokens are used, not cookies
 
@@ -172,4 +183,6 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.digidex.bio",
     "http://localhost:10000",
     "http://10.0.0.218:10000",
+    "http://digidex.lan",
+    "http://app.digidex.lan",
 ]
