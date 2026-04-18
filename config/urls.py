@@ -7,6 +7,7 @@ API is mounted at 'app/api/' to match subdirectory routing:
 
 See: https://docs.djangoproject.com/en/6.0/topics/http/urls/
 """
+
 from django.contrib import admin
 from django.urls import path, include
 from ninja_extra import NinjaExtraAPI
@@ -30,7 +31,7 @@ def health_check(request):
 
 
 urlpatterns = [
-    path('app/admin/', admin.site.urls),
-    path('app/api/', api.urls),
-    path('app/nfctags/', include('domain.urls')),
+    path("app/admin/", admin.site.urls),
+    path("app/api/", api.urls),
+    path("app/nfctags/", include("domain.urls")),
 ]

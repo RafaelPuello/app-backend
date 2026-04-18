@@ -14,6 +14,7 @@ class NFCTagService:
     """
     Service layer for managing NFC tags and their content.
     """
+
     def __init__(self, user: Optional[AbstractBaseUser] = None):
         self.user = user
 
@@ -42,7 +43,7 @@ class NFCTagService:
     @transaction.atomic
     def disconnect_tag(self, tag: AbstractNFCTag) -> AbstractNFCTag:
         if tag.user != self.user:
-            raise ValidationError(_('This tag is not registered to your account.'))
+            raise ValidationError(_("This tag is not registered to your account."))
         tag.user = None
         tag.full_clean()
         tag.save()

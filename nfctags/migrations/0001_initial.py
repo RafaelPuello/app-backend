@@ -8,48 +8,105 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('contenttypes', '0002_remove_content_type_name'),
+        ("contenttypes", "0002_remove_content_type_name"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='NFCTag',
+            name="NFCTag",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('uuid', models.UUIDField(db_index=True, default=uuid.uuid4, editable=False, unique=True)),
-                ('uid', models.CharField(db_index=True, editable=False, max_length=32, unique=True, validators=[nfctags.validators.validate_ascii_mirror_uid])),
-                ('metadata', models.JSONField(default=dict, editable=False)),
-                ('active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.ForeignKey(blank=True, editable=False, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "uuid",
+                    models.UUIDField(
+                        db_index=True, default=uuid.uuid4, editable=False, unique=True
+                    ),
+                ),
+                (
+                    "uid",
+                    models.CharField(
+                        db_index=True,
+                        editable=False,
+                        max_length=32,
+                        unique=True,
+                        validators=[nfctags.validators.validate_ascii_mirror_uid],
+                    ),
+                ),
+                ("metadata", models.JSONField(default=dict, editable=False)),
+                ("active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'NFC Tag',
-                'verbose_name_plural': 'NFC Tags',
-                'ordering': ['uid'],
-                'abstract': False,
+                "verbose_name": "NFC Tag",
+                "verbose_name_plural": "NFC Tags",
+                "ordering": ["uid"],
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='NFCTaggedItem',
+            name="NFCTaggedItem",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('object_id', models.IntegerField(db_index=True, editable=False)),
-                ('content_type', models.ForeignKey(editable=False, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype')),
-                ('nfctag', models.ForeignKey(editable=False, on_delete=django.db.models.deletion.CASCADE, to='nfctags.nfctag')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("object_id", models.IntegerField(db_index=True, editable=False)),
+                (
+                    "content_type",
+                    models.ForeignKey(
+                        editable=False,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="contenttypes.contenttype",
+                    ),
+                ),
+                (
+                    "nfctag",
+                    models.ForeignKey(
+                        editable=False,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="nfctags.nfctag",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'nfc tagged item',
-                'verbose_name_plural': 'nfc tagged items',
-                'indexes': [models.Index(fields=['content_type', 'object_id'], name='nfctags_nfc_content_491def_idx')],
+                "verbose_name": "nfc tagged item",
+                "verbose_name_plural": "nfc tagged items",
+                "indexes": [
+                    models.Index(
+                        fields=["content_type", "object_id"],
+                        name="nfctags_nfc_content_491def_idx",
+                    )
+                ],
             },
         ),
     ]

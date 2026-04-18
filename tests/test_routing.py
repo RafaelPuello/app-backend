@@ -12,6 +12,7 @@ Key invariants:
 
 See CLAUDE.md "Routing Validation" for architecture notes.
 """
+
 import pytest
 from django.test import Client
 

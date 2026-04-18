@@ -57,7 +57,7 @@ class PlantDetailOut(Schema):
 
     # Pydantic v2 configuration
     model_config = {
-        "populate_by_name": True,   # accept both class_ and class
+        "populate_by_name": True,  # accept both class_ and class
         "alias_generator": None,
         "protected_namespaces": (),  # required by Ninja in some cases
     }

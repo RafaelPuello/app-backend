@@ -11,7 +11,7 @@ from ninja_extra.pagination import (
     NinjaPaginationResponseSchema,
     paginate,
 )
-from pygbif import species, occurrences
+from pygbif import occurrences
 
 from .schema import (
     ErrorOut,
@@ -22,11 +22,12 @@ from .services import GBIFNotFound, GBIFError, get_plant_details
 from .utils import resolve_gbif_id
 
 
-@api_controller('/gbif', tags=['GBIF (Plants)'])
+@api_controller("/gbif", tags=["GBIF (Plants)"])
 class GBIFController(ControllerBase):
     """
     Endpoints that proxy/normalize GBIF data for the frontend.
     """
+
     @http_get(
         "/{str:identifier}",
         response={200: PlantDetailOut, 404: ErrorOut, 500: ErrorOut},
@@ -43,7 +44,11 @@ class GBIFController(ControllerBase):
 
     @http_get(
         "/{str:identifier}/occurrences",
-        response={200: NinjaPaginationResponseSchema[PlantOccurrenceOut], 404: ErrorOut, 500: ErrorOut},
+        response={
+            200: NinjaPaginationResponseSchema[PlantOccurrenceOut],
+            404: ErrorOut,
+            500: ErrorOut,
+        },
         summary="Paginated occurrences for a plant",
     )
     @paginate(LimitOffsetPagination)

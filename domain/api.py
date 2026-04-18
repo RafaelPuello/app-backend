@@ -1,7 +1,9 @@
+import uuid as uuid_module
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from ninja.errors import HttpError
 
+from botany.models import Plant
 from config.auth import JWTAuthenticationBackend
 from ninja_extra import (
     api_controller,
@@ -14,12 +16,20 @@ from ninja_extra import (
 from ninja_extra.pagination import (
     LimitOffsetPagination,
     NinjaPaginationResponseSchema,
-    paginate
+    paginate,
 )
 from ninja_extra.permissions import IsAuthenticated
 
 from nfctags import get_nfctag_model
-from .schema import NFCTagOut, NFCTagRegisterIn, NFCTagScanIn, NFCTagUpdateIn
+from .models import PlantLabel
+from .schema import (
+    BindPlantRequest,
+    NFCTagOut,
+    NFCTagRegisterIn,
+    NFCTagScanIn,
+    NFCTagUpdateIn,
+    PlantLabelOut,
+)
 from .selectors import get_nfctag_by_scan, get_nfctags_for, get_nfctags_visible_for
 from .services import NFCTagService
 
@@ -40,16 +50,30 @@ class DomainController(ControllerBase):
     - Mutations go through NFCTagService
     """
 
-    @http_get("", response=NinjaPaginationResponseSchema[NFCTagOut])
+    @http_get("", response=NinjaPaginationResponseSchema[PlantLabelOut])
     @paginate(LimitOffsetPagination)
-    def list_tags(self):
-        user = self.context.request.user
-        return get_nfctags_for(fetched_by=user).order_by("-uuid")
+    def list_tags(self, include: str = ""):
+        """List the authenticated user's NFC tags.
 
-    @http_get("/{uuid:nfctag_uuid}", response=NFCTagOut)
-    def retrieve(self, nfctag_uuid):
+        Args:
+            include: Comma-separated optional expansions (e.g., ``plant``).
+                     When ``plant`` is included, plant details are fetched via
+                     ``select_related`` to avoid N+1 queries.
+
+        Returns:
+            Paginated list of PlantLabelOut objects.
+        """
         user = self.context.request.user
-        qs = get_nfctags_for(fetched_by=user)
+        qs = get_nfctags_for(fetched_by=user).order_by("-uuid")
+        if "plant" in include:
+            qs = qs.select_related("plant")
+        return qs
+
+    @http_get("/{uuid:nfctag_uuid}", response=PlantLabelOut)
+    def retrieve(self, nfctag_uuid):
+        """Retrieve a single NFC tag by UUID."""
+        user = self.context.request.user
+        qs = get_nfctags_for(fetched_by=user).select_related("plant")
         return get_object_or_404(qs, uuid=nfctag_uuid)
 
     @http_post("/scan", response={200: NFCTagOut, 404: dict})
@@ -110,6 +134,54 @@ class DomainController(ControllerBase):
         if dirty_fields:
             tag.full_clean()
             tag.save(update_fields=dirty_fields)
+
+        return tag
+
+    # ------------------------------------------------------------------
+    # NFC Tag ↔ Plant binding endpoints
+    # ------------------------------------------------------------------
+
+    @http_post("/{uuid:nfctag_uuid}/bind", response=PlantLabelOut)
+    def bind_plant(self, nfctag_uuid: uuid_module.UUID, payload: BindPlantRequest):
+        """Bind an NFC tag to a plant owned by the requesting user.
+
+        Args:
+            nfctag_uuid: UUID of the PlantLabel to bind.
+            payload: Contains ``plant_id`` (public UUID of the plant).
+
+        Returns:
+            Updated PlantLabelOut with plant details populated.
+
+        Raises:
+            404: Tag not found, not owned by user, or plant not owned by user.
+        """
+        user = self.context.request.user
+        tag = get_object_or_404(PlantLabel, uuid=nfctag_uuid, user=user)
+        plant = get_object_or_404(Plant, uuid=payload.plant_id, user=user)
+
+        tag.plant = plant
+        tag.save(update_fields=["plant_id", "updated_at"])
+
+        return tag
+
+    @http_post("/{uuid:nfctag_uuid}/unbind", response=PlantLabelOut)
+    def unbind_plant(self, nfctag_uuid: uuid_module.UUID):
+        """Unbind an NFC tag from its current plant.
+
+        Args:
+            nfctag_uuid: UUID of the PlantLabel to unbind.
+
+        Returns:
+            Updated PlantLabelOut with plant=None.
+
+        Raises:
+            404: Tag not found or not owned by user.
+        """
+        user = self.context.request.user
+        tag = get_object_or_404(PlantLabel, uuid=nfctag_uuid, user=user)
+
+        tag.plant = None
+        tag.save(update_fields=["plant_id", "updated_at"])
 
         return tag
 

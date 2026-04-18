@@ -50,7 +50,7 @@ class BasePlantForm(Form):
                     "aria-required": "false",
                     "aria-invalid": "false",
                 }
-            )
+            ),
         }
 
     def clean_name(self):

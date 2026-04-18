@@ -6,37 +6,47 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('nfctags', '0001_initial'),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("nfctags", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='NFCTaggedItem',
+            name="NFCTaggedItem",
         ),
         migrations.AlterModelOptions(
-            name='nfctag',
+            name="nfctag",
             options={},
         ),
         migrations.RemoveField(
-            model_name='nfctag',
-            name='metadata',
+            model_name="nfctag",
+            name="metadata",
         ),
         migrations.AddField(
-            model_name='nfctag',
-            name='content_type',
-            field=models.ForeignKey(blank=True, editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype'),
+            model_name="nfctag",
+            name="content_type",
+            field=models.ForeignKey(
+                blank=True,
+                editable=False,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="contenttypes.contenttype",
+            ),
         ),
         migrations.AddField(
-            model_name='nfctag',
-            name='object_id',
-            field=models.IntegerField(blank=True, db_index=True, editable=False, null=True),
+            model_name="nfctag",
+            name="object_id",
+            field=models.IntegerField(
+                blank=True, db_index=True, editable=False, null=True
+            ),
         ),
         migrations.AddIndex(
-            model_name='nfctag',
-            index=models.Index(fields=['content_type', 'object_id'], name='nfctags_nfc_content_3226d3_idx'),
+            model_name="nfctag",
+            index=models.Index(
+                fields=["content_type", "object_id"],
+                name="nfctags_nfc_content_3226d3_idx",
+            ),
         ),
     ]

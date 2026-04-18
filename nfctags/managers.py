@@ -18,13 +18,17 @@ class NFCTagQuerySet(models.QuerySet):
         """
         NFC tags that are linked to a content_object.
         """
-        return self.filter(active=True, content_type__isnull=False, object_id__isnull=False)
+        return self.filter(
+            active=True, content_type__isnull=False, object_id__isnull=False
+        )
 
     def unlinked(self):
         """
         NFC tags not currently linked to a content_object.
         """
-        return self.filter(active=True, content_type__isnull=True, object_id__isnull=True)
+        return self.filter(
+            active=True, content_type__isnull=True, object_id__isnull=True
+        )
 
 
 class NFCTagManager(models.Manager):

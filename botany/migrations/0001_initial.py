@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,47 +16,165 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Plant',
+            name="Plant",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(db_index=True, help_text='The name of the plant.', max_length=255, verbose_name='name')),
-                ('description', models.TextField(blank=True, help_text='A brief description of the plant.', verbose_name='description')),
-                ('gbif_id', models.PositiveBigIntegerField(blank=True, default=6, help_text='The GBIF ID of the plant.', verbose_name='GBIF ID')),
-                ('uuid', models.UUIDField(db_index=True, default=uuid.uuid4, editable=False, unique=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.ForeignKey(help_text='The user who owns this plant.', on_delete=django.db.models.deletion.CASCADE, related_name='plants', to=settings.AUTH_USER_MODEL, verbose_name='user')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        db_index=True,
+                        help_text="The name of the plant.",
+                        max_length=255,
+                        verbose_name="name",
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        blank=True,
+                        help_text="A brief description of the plant.",
+                        verbose_name="description",
+                    ),
+                ),
+                (
+                    "gbif_id",
+                    models.PositiveBigIntegerField(
+                        blank=True,
+                        default=6,
+                        help_text="The GBIF ID of the plant.",
+                        verbose_name="GBIF ID",
+                    ),
+                ),
+                (
+                    "uuid",
+                    models.UUIDField(
+                        db_index=True, default=uuid.uuid4, editable=False, unique=True
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        help_text="The user who owns this plant.",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="plants",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="user",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='PlantGalleryImage',
+            name="PlantGalleryImage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image', models.ImageField(help_text='Upload an image for this plant.', upload_to='plants/gallery/', verbose_name='image')),
-                ('caption', models.CharField(blank=True, max_length=250)),
-                ('sort_order', models.IntegerField(blank=True, editable=False, null=True)),
-                ('plant', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='gallery_images', to='botany.plant')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "image",
+                    models.ImageField(
+                        help_text="Upload an image for this plant.",
+                        upload_to="plants/gallery/",
+                        verbose_name="image",
+                    ),
+                ),
+                ("caption", models.CharField(blank=True, max_length=250)),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "plant",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="gallery_images",
+                        to="botany.plant",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['sort_order'],
+                "ordering": ["sort_order"],
             },
         ),
         migrations.CreateModel(
-            name='PlantJournalEntry',
+            name="PlantJournalEntry",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('body', models.TextField()),
-                ('watered', models.BooleanField(default=False, help_text='Indicates if the plant was watered.', verbose_name='Watered')),
-                ('fertilized', models.BooleanField(default=False, help_text='Indicates if the plant was fertilized.', verbose_name='Fertilized')),
-                ('repotted', models.BooleanField(default=False, help_text='Indicates if the plant was repotted.', verbose_name='Repotted')),
-                ('rotated', models.BooleanField(default=False, help_text='Indicates if the plant was rotated.', verbose_name='Rotated')),
-                ('uuid', models.UUIDField(db_index=True, default=uuid.uuid4, editable=False, unique=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('plant', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='journal_entries', to='botany.plant')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("body", models.TextField()),
+                (
+                    "watered",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indicates if the plant was watered.",
+                        verbose_name="Watered",
+                    ),
+                ),
+                (
+                    "fertilized",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indicates if the plant was fertilized.",
+                        verbose_name="Fertilized",
+                    ),
+                ),
+                (
+                    "repotted",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indicates if the plant was repotted.",
+                        verbose_name="Repotted",
+                    ),
+                ),
+                (
+                    "rotated",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indicates if the plant was rotated.",
+                        verbose_name="Rotated",
+                    ),
+                ),
+                (
+                    "uuid",
+                    models.UUIDField(
+                        db_index=True, default=uuid.uuid4, editable=False, unique=True
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "plant",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="journal_entries",
+                        to="botany.plant",
+                    ),
+                ),
             ],
         ),
     ]

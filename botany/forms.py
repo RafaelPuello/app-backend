@@ -8,7 +8,7 @@ from .models import Plant
 class BasePlantForm(ModelForm):
     class Meta:
         model = Plant
-        fields = ['name', 'description']
+        fields = ["name", "description"]
         widgets = {
             "name": TextInput(
                 attrs={
@@ -32,7 +32,7 @@ class BasePlantForm(ModelForm):
                     "aria-required": "false",
                     "aria-invalid": "false",
                 }
-            )
+            ),
         }
 
     def clean_name(self):

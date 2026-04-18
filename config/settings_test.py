@@ -68,8 +68,19 @@ DATABASES = {
 
 SITE_ID = 1
 
-# JWT settings — no real key needed; auth is mocked per test
-JWT_PUBLIC_KEY = None
+# JWT settings — load the ID service public key for test token validation.
+# The key pair lives in id/backend/config/keys/ (repo root is 4 levels above this file:
+# config/settings_test.py → config/ → backend/ → app/ → repo root).
+_ID_KEYS_DIR = BASE_DIR.parent.parent / "id" / "backend" / "config" / "keys"
+_jwt_public_key_path = _ID_KEYS_DIR / "jwt_public_key.pem"
+
+try:
+    JWT_PUBLIC_KEY = _jwt_public_key_path.read_text().strip()
+except FileNotFoundError:
+    # CI / environments without the ID service repo; tests will be skipped by
+    # create_test_jwt_token when the private key is also missing.
+    JWT_PUBLIC_KEY = None
+
 JWT_ALGORITHM = "RS256"
 JWT_ISSUER = None
 JWT_AUDIENCE = None
@@ -83,6 +94,9 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Use PlantLabel as the concrete NFC tag model for MVP
+NFC_TAG_MODEL = "domain.PlantLabel"
 
 AUTHENTICATION_BACKENDS = [
     "config.auth.JWTAuthenticationBackend",

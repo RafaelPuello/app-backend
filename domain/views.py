@@ -19,11 +19,13 @@ NFCTag = get_nfctag_model()
 def list_nfctags(request):
     context = {}
 
-    queried_uuid = request.GET.get('uuid')
+    queried_uuid = request.GET.get("uuid")
     if queried_uuid:
         if is_valid_uuid(queried_uuid):
             try:
-                context.update({"queried_nfctag": NFCTag.objects.get(uuid=queried_uuid)})
+                context.update(
+                    {"queried_nfctag": NFCTag.objects.get(uuid=queried_uuid)}
+                )
                 return render(request, "domain/index.html", context)
             except NFCTag.DoesNotExist:
                 messages.error(request, _("The requested NFC tag does not exist."))
@@ -39,27 +41,33 @@ def list_nfctags(request):
 @login_required
 @never_cache
 def detail_nfctag(request, nfctag_uuid):
-    nfctag = get_object_or_404(get_nfctags_for(fetched_by=request.user), uuid=nfctag_uuid)
+    nfctag = get_object_or_404(
+        get_nfctags_for(fetched_by=request.user), uuid=nfctag_uuid
+    )
     return render(request, "domain/detail.html", {"nfctag": nfctag})
 
 
 @login_required
 @never_cache
 def edit_nfctag(request, nfctag_uuid):
-    nfctag = get_object_or_404(get_nfctags_for(fetched_by=request.user), uuid=nfctag_uuid)
+    nfctag = get_object_or_404(
+        get_nfctags_for(fetched_by=request.user), uuid=nfctag_uuid
+    )
 
     if request.method == "POST":
         form = BasePlantLabelForm(request.POST, instance=nfctag)
 
         if form.is_valid():
             nfctag = form.save()
-            messages.success(request, _('NFC Tag successfully updated.'))
-            return redirect(reverse('domain:detail_nfctag', args=[nfctag_uuid]))
+            messages.success(request, _("NFC Tag successfully updated."))
+            return redirect(reverse("domain:detail_nfctag", args=[nfctag_uuid]))
 
     else:
         form = BasePlantLabelForm(instance=nfctag)
 
-    return render(request, "domain/edit.html", {"form": form, "nfctag_uuid": nfctag_uuid})
+    return render(
+        request, "domain/edit.html", {"form": form, "nfctag_uuid": nfctag_uuid}
+    )
 
 
 @login_required
@@ -69,21 +77,30 @@ def register_nfctag(request, nfctag_uuid):
     try:
         service = NFCTagService(user=request.user)
         service.register_user(tag=nfctag)
-        messages.success(request, _('NFC Tag successfully added to your account.'))
+        messages.success(request, _("NFC Tag successfully added to your account."))
     except Exception:
-        messages.error(request, _('This tag is already registered.'))
-    return redirect(reverse('domain:list_nfctags'))
+        messages.error(request, _("This tag is already registered."))
+    return redirect(reverse("domain:list_nfctags"))
 
 
 @login_required
 @never_cache
 def disconnect_nfctag(request, nfctag_uuid):
-    nfctag = get_object_or_404(get_nfctags_for(fetched_by=request.user), uuid=nfctag_uuid)
+    nfctag = get_object_or_404(
+        get_nfctags_for(fetched_by=request.user), uuid=nfctag_uuid
+    )
 
     try:
         service = NFCTagService(user=request.user)
         service.disconnect_tag(nfctag)
-        messages.success(request, _('NFC Tag successfully disconnected from your account.'))
+        messages.success(
+            request, _("NFC Tag successfully disconnected from your account.")
+        )
     except Exception:
-        messages.error(request, _('Failed to disconnect NFC Tag. It may not be registered to your account.'))
-    return redirect(reverse('domain:list_nfctags'))
+        messages.error(
+            request,
+            _(
+                "Failed to disconnect NFC Tag. It may not be registered to your account."
+            ),
+        )
+    return redirect(reverse("domain:list_nfctags"))

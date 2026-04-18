@@ -4,18 +4,17 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('domain', '0002_remove_plantlabel_metadata_plantlabel_content_type_and_more'),
+        ("domain", "0002_remove_plantlabel_metadata_plantlabel_content_type_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='plantlabel',
-            name='content_type',
+            model_name="plantlabel",
+            name="content_type",
         ),
         migrations.RemoveField(
-            model_name='plantlabel',
-            name='object_id',
+            model_name="plantlabel",
+            name="object_id",
         ),
     ]

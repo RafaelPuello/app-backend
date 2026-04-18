@@ -5,19 +5,24 @@ from pygbif import species, occurrences
 
 try:
     from kindwise import PlantApi, PlantIdentification, ClassificationLevel
+
     _KINDWISE_AVAILABLE = True
 except ImportError:
     _KINDWISE_AVAILABLE = False
 
 from .utils import resolve_gbif_id
 
+
 # Domain-specific exceptions so callers don't need to import pygbif or know implementation details.
 class GBIFNotFound(Exception):
     """Raised when the requested GBIF resource or results are not found (404-like)."""
+
     pass
+
 
 class GBIFError(Exception):
     """Raised when something goes wrong calling GBIF (500-like)."""
+
     pass
 
 
@@ -109,9 +114,7 @@ def get_plant_summary(
     # --- Fetch occurrences ---
     try:
         occurrences_list = get_plant_occurrences(
-            identifier,
-            limit=occurrence_limit,
-            fields=occurrence_fields
+            identifier, limit=occurrence_limit, fields=occurrence_fields
         )
     except GBIFNotFound:
         # Depending on business logic, we can choose to allow empty,
@@ -129,7 +132,7 @@ def get_plant_summary(
         "genus": details.get("genus"),
         "usageKey": details.get("usageKey"),
         "numOccurrences": len(occurrences_list),
-        "numWithMedia": sum(1 for o in occurrences_list if o.get("media"))
+        "numWithMedia": sum(1 for o in occurrences_list if o.get("media")),
     }
 
     return {
@@ -150,7 +153,7 @@ class KindwiseService:
         self.api = PlantApi(api_key=self.api_key)
 
         # specify up to 3 languages
-        self.language = ['en']
+        self.language = ["en"]
         self.details = self.get_details()
         # self.health = 'all'
         self.classification_level = ClassificationLevel.SPECIES
@@ -163,7 +166,7 @@ class KindwiseService:
                 language=self.language,
                 details=self.details,
                 # health=self.health,
-                classification_level=self.classification_level
+                classification_level=self.classification_level,
             )
             return self.parse_identification(identification)
         except Exception as e:
@@ -173,33 +176,36 @@ class KindwiseService:
         probability_is_plant = identification.result.is_plant.probability
 
         payload = {
-            'access_token': identification.access_token,
-            'latitude': identification.input.latitude,
-            'longitude': identification.input.longitude,
-            'datetime': identification.input.datetime,
-            'probability_is_plant': probability_is_plant,
+            "access_token": identification.access_token,
+            "latitude": identification.input.latitude,
+            "longitude": identification.input.longitude,
+            "datetime": identification.input.datetime,
+            "probability_is_plant": probability_is_plant,
         }
 
         # if probability_is_plant < 0.5:
         #     return payload
 
-        payload.update(self.parse_suggestions(identification.result.classification.suggestions))  # noqa: E501
+        payload.update(
+            self.parse_suggestions(identification.result.classification.suggestions)
+        )  # noqa: E501
         return payload
 
     def parse_suggestions(self, suggestions):
         top_match = suggestions[0]
         return {
-            'suggestions': {
+            "suggestions": {
                 index: {
-                    'id': value.details['gbif_id'],
-                    'name': value.name,
-                    'probability': value.probability,
-                } for index, value in enumerate(suggestions)
+                    "id": value.details["gbif_id"],
+                    "name": value.name,
+                    "probability": value.probability,
+                }
+                for index, value in enumerate(suggestions)
             },
-            'top_match_id': top_match.details['gbif_id'],
-            'top_match_name': top_match.name,
-            'top_match_probability': top_match.probability,
+            "top_match_id": top_match.details["gbif_id"],
+            "top_match_name": top_match.name,
+            "top_match_probability": top_match.probability,
         }
 
     def get_details(self):
-        return ['gbif_id']
+        return ["gbif_id"]

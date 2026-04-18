@@ -8,7 +8,7 @@ NewNFCTagModel = get_nfctag_model()
 
 
 class Command(BaseCommand):
-    help = ('Migrate data from NFCTag to the new model.\n')
+    help = "Migrate data from NFCTag to the new model.\n"
 
     def handle(self, *args, **options):
         nfctags_created = 0
@@ -31,7 +31,9 @@ class Command(BaseCommand):
                     nfctags_existing += 1
 
         # --- Output Summary ---
-        self.stdout.write(self.style.SUCCESS(
-            f"Migration complete!\n"
-            f"NFCTags → Created: {nfctags_created}, Existing: {nfctags_existing}\n"
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Migration complete!\n"
+                f"NFCTags → Created: {nfctags_created}, Existing: {nfctags_existing}\n"
+            )
+        )

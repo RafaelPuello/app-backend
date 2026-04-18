@@ -20,7 +20,7 @@ class AbstractNFCTag(models.Model):
         unique=True,
         db_index=True,
         editable=False,
-        validators=[validate_ascii_mirror_uid]
+        validators=[validate_ascii_mirror_uid],
     )
     user = models.ForeignKey(
         get_user_model(),
@@ -29,16 +29,9 @@ class AbstractNFCTag(models.Model):
         blank=True,
         editable=False,
     )
-    active = models.BooleanField(
-        default=True
-    )
-    created_at = models.DateTimeField(
-        db_index=True,
-        auto_now_add=True
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(db_index=True, auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"NFC Tag: {self.uid}"
@@ -51,7 +44,7 @@ class AbstractNFCTag(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ['uid']
+        ordering = ["uid"]
         verbose_name = _("NFC Tag")
         verbose_name_plural = _("NFC Tags")
 
@@ -65,7 +58,7 @@ class AbstractNFCTag(models.Model):
 
 class GenericAbstractNFCTag(AbstractNFCTag):
     content_type = models.ForeignKey(
-        'contenttypes.ContentType',
+        "contenttypes.ContentType",
         on_delete=models.CASCADE,
         editable=False,
         null=True,
@@ -79,10 +72,7 @@ class GenericAbstractNFCTag(AbstractNFCTag):
 
 class AbstractIntegerNFCTag(GenericAbstractNFCTag):
     object_id = models.IntegerField(
-        db_index=True,
-        null=True,
-        blank=True,
-        editable=False
+        db_index=True, null=True, blank=True, editable=False
     )
 
     class Meta:
@@ -90,12 +80,7 @@ class AbstractIntegerNFCTag(GenericAbstractNFCTag):
 
 
 class AbstractUUIDNFCTag(GenericAbstractNFCTag):
-    object_id = models.UUIDField(
-        db_index=True,
-        null=True,
-        blank=True,
-        editable=False
-    )
+    object_id = models.UUIDField(db_index=True, null=True, blank=True, editable=False)
 
     class Meta:
         abstract = True

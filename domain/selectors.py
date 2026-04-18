@@ -9,7 +9,9 @@ from nfctags.validators import parse_ascii_mirror
 NFCTag = get_nfctag_model()
 
 
-def get_nfctag_by_scan(*, ascii_mirror: str, user: Optional[AbstractBaseUser] = None) -> Optional[NFCTag]:
+def get_nfctag_by_scan(
+    *, ascii_mirror: str, user: Optional[AbstractBaseUser] = None
+) -> Optional[NFCTag]:
     """
     Returns the NFCTag object corresponding to the given NFC tag scan.
 
@@ -45,7 +47,7 @@ def get_nfctags_visible_for(*, user: AbstractBaseUser) -> Iterable[int]:
     return NFCTag.objects.filter(
         user=user,
         active=True,
-    ).values_list('id', flat=True)
+    ).values_list("id", flat=True)
 
 
 def get_nfctags_for(*, fetched_by: AbstractBaseUser) -> Iterable[AbstractNFCTag]:
