@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 if TYPE_CHECKING:
-    import django.test
+    pass
 
 from botany.models import Plant
 from domain.models import PlantLabel
