@@ -37,10 +37,7 @@ DJANGO_SETTINGS_MODULE=config.settings_test pytest -v --cov
 DJANGO_SETTINGS_MODULE=config.settings_test pytest domain/tests.py::test_list_parity
 ```
 
-**Test settings:** `config/settings_test.py` uses SQLite in-memory and a dummy secret key so
-tests run without real environment variables or a remote database. The `DJANGO_SETTINGS_MODULE`
-env var must be set explicitly when running locally (the `.env.dev` file sets it to
-`config.settings` which requires PostgreSQL; override it on the command line as shown above).
+**Test settings:** `config/settings_test.py` uses SQLite in-memory and loads the ID service JWT public key from `../../id/backend/config/keys/jwt_public_key.pem` (relative to repo root) for authenticating API test requests. Tests skip automatically if the key file is not found. The `DJANGO_SETTINGS_MODULE` env var must be set explicitly when running locally (the `.env.dev` file sets it to `config.settings` which requires PostgreSQL; override it on the command line as shown above).
 
 **Python interpreter:** The venv at `backend/venv` uses Python 3.12.2 (from `/usr/local/`)
 which lacks the compiled `_sqlite3` module on this host. Use the pyenv Python instead:
@@ -66,12 +63,14 @@ python manage.py showmigrations   # Show migration status
 - `botany/` - Plant taxonomy and classification data
 
 **API Endpoints** (via django-ninja-extra, mounted at `/app/api/`)
-- `GET /app/api/nfctags` - List NFC tags (paginated)
+- `GET /app/api/nfctags?include=plant` - List NFC tags (paginated); `include=plant` adds plant details via select_related
 - `POST /app/api/nfctags/register` - Register a new tag by UID
 - `POST /app/api/nfctags/scan` - Look up a tag by ASCII mirror
 - `GET /app/api/nfctags/{uuid}` - Retrieve a single NFC tag
 - `PUT /app/api/nfctags/{uuid}` - Update tag fields
 - `DELETE /app/api/nfctags/{uuid}` - Hard delete a tag
+- `POST /app/api/nfctags/{uuid}/bind` - Bind tag to a plant (`{"plant_id": "<plant-uuid>"}`)
+- `POST /app/api/nfctags/{uuid}/unbind` - Unbind tag from its plant
 - `GET /app/api/gbif/{identifier}` - Fetch plant details from GBIF
 - `GET /app/api/gbif/{identifier}/occurrences` - Paginated GBIF occurrences
 - Swagger/OpenAPI: `GET /app/api/docs` (JSON schema: `GET /app/api/openapi.json`)
@@ -85,9 +84,14 @@ AbstractNFCTag (base class in nfctags)
 ```
 
 Key fields:
-- `uuid` - Unique identifier for tag
-- `uid` - NFC tag UID/serial number
+- `uuid` - Unique identifier for tag (public-facing)
+- `uid` - NFC tag UID/serial number (chip hardware ID)
+- `plant` - FK to `botany.Plant` (null=True; set via `/bind` endpoint)
 - Domain-specific fields (e.g., `title` for PlantLabel)
+
+`NFC_TAG_MODEL = "domain.PlantLabel"` is set in `settings_test.py` and should be set in production settings to use `PlantLabel` as the concrete NFC tag model (as per ADR #0002).
+
+**Path parameter annotation gotcha:** Django's `{uuid:param}` path converter returns a Python `uuid.UUID` object. When the endpoint also has a body parameter (e.g., `payload: BindPlantRequest`), pydantic v2 validates path params strictly — the path parameter **must** be annotated as `uuid.UUID` in the function signature, otherwise pydantic defaults it to `str` and raises 422.
 
 Models use `django-modelcluster` for relational data clustering.
 

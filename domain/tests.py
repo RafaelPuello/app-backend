@@ -1,14 +1,11 @@
 import time
 import uuid as uuid_module
-from typing import TYPE_CHECKING
 
 import jwt
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.urls import reverse
-
-if TYPE_CHECKING:
-    pass
 
 from botany.models import Plant
 from domain.models import PlantLabel
@@ -109,16 +106,16 @@ def test_detail_parity(client, django_user_model):
 # ---------------------------------------------------------------------------
 
 
-def _make_user(suffix: str) -> "User":
+def _make_user(suffix: str) -> AbstractBaseUser:
     """Create a unique user for tests."""
-    return User.objects.create_user(
+    return User.objects.create_user(  # type: ignore[return-value]
         username=f"user_{suffix}",
         email=f"user_{suffix}@example.com",
         password="testpass",
     )
 
 
-def _make_plant(user: "User", name: str = "Test Plant") -> Plant:
+def _make_plant(user: AbstractBaseUser, name: str = "Test Plant") -> Plant:
     """Create a Plant owned by the given user."""
     return Plant.objects.create(
         name=name,
@@ -126,17 +123,18 @@ def _make_plant(user: "User", name: str = "Test Plant") -> Plant:
     )
 
 
-def _make_plant_label(user: "User", plant: Plant | None = None) -> PlantLabel:
+def _make_plant_label(
+    user: AbstractBaseUser, plant: Plant | None = None
+) -> PlantLabel:
     """Create a PlantLabel (NFC tag) owned by the given user."""
-    label = PlantLabel.objects.create(
+    return PlantLabel.objects.create(
         uid=f"UID{uuid_module.uuid4().hex[:8].upper()}",
         user=user,
         plant=plant,
     )
-    return label
 
 
-def _auth_header(user: "User") -> str:
+def _auth_header(user: AbstractBaseUser) -> str:
     """Return JWT Authorization header value for the given user."""
     token = create_test_jwt_token(user)
     return f"Bearer {token}"
@@ -157,7 +155,7 @@ class TestNFCPlantBinding:
         plant = _make_plant(user, name="Monstera Deliciosa")
         tag = _make_plant_label(user)
 
-        client.login(username=user.username, password="testpass")
+        client.login(username=getattr(user, "username"), password="testpass")
         response = client.post(
             f"/app/api/nfctags/{tag.uuid}/bind",
             data=f'{{"plant_id": "{plant.uuid}"}}',
@@ -180,7 +178,7 @@ class TestNFCPlantBinding:
         plant = _make_plant(user2, name="User2 Plant")  # belongs to user2
         tag = _make_plant_label(user1)  # belongs to user1
 
-        client.login(username=user1.username, password="testpass")
+        client.login(username=getattr(user1, "username"), password="testpass")
         response = client.post(
             f"/app/api/nfctags/{tag.uuid}/bind",
             data=f'{{"plant_id": "{plant.uuid}"}}',
@@ -197,7 +195,7 @@ class TestNFCPlantBinding:
         plant = _make_plant(user1, name="User1 Plant")
         tag = _make_plant_label(user2)  # belongs to user2, not user1
 
-        client.login(username=user1.username, password="testpass")
+        client.login(username=getattr(user1, "username"), password="testpass")
         response = client.post(
             f"/app/api/nfctags/{tag.uuid}/bind",
             data=f'{{"plant_id": "{plant.uuid}"}}',
@@ -213,7 +211,7 @@ class TestNFCPlantBinding:
         plant = _make_plant(user, name="Ficus")
         tag = _make_plant_label(user, plant=plant)
 
-        client.login(username=user.username, password="testpass")
+        client.login(username=getattr(user, "username"), password="testpass")
         response = client.post(
             f"/app/api/nfctags/{tag.uuid}/unbind",
             HTTP_AUTHORIZATION=_auth_header(user),
@@ -232,7 +230,7 @@ class TestNFCPlantBinding:
         user = _make_user("unbind2")
         tag = _make_plant_label(user, plant=None)
 
-        client.login(username=user.username, password="testpass")
+        client.login(username=getattr(user, "username"), password="testpass")
         response = client.post(
             f"/app/api/nfctags/{tag.uuid}/unbind",
             HTTP_AUTHORIZATION=_auth_header(user),
@@ -249,7 +247,7 @@ class TestNFCPlantBinding:
         plant = _make_plant(user, name="Pothos")
         _make_plant_label(user, plant=plant)
 
-        client.login(username=user.username, password="testpass")
+        client.login(username=getattr(user, "username"), password="testpass")
         response = client.get(
             "/app/api/nfctags?include=plant&limit=100",
             HTTP_AUTHORIZATION=_auth_header(user),
@@ -267,7 +265,7 @@ class TestNFCPlantBinding:
         plant = _make_plant(user, name="Cactus")
         _make_plant_label(user, plant=plant)
 
-        client.login(username=user.username, password="testpass")
+        client.login(username=getattr(user, "username"), password="testpass")
         response = client.get(
             "/app/api/nfctags?limit=100",
             HTTP_AUTHORIZATION=_auth_header(user),

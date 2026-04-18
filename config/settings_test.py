@@ -74,6 +74,7 @@ SITE_ID = 1
 _ID_KEYS_DIR = BASE_DIR.parent.parent / "id" / "backend" / "config" / "keys"
 _jwt_public_key_path = _ID_KEYS_DIR / "jwt_public_key.pem"
 
+JWT_PUBLIC_KEY: str | None
 try:
     JWT_PUBLIC_KEY = _jwt_public_key_path.read_text().strip()
 except FileNotFoundError:
@@ -82,13 +83,13 @@ except FileNotFoundError:
     JWT_PUBLIC_KEY = None
 
 JWT_ALGORITHM = "RS256"
-JWT_ISSUER = None
-JWT_AUDIENCE = None
+JWT_ISSUER: str | None = None
+JWT_AUDIENCE: str | None = None
 
 # CORS
-CORS_ALLOWED_ORIGINS = []
+CORS_ALLOWED_ORIGINS: list[str] = []
 CORS_ALLOW_CREDENTIALS = False
-CSRF_TRUSTED_ORIGINS = []
+CSRF_TRUSTED_ORIGINS: list[str] = []
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"

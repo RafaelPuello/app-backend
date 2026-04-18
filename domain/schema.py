@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-import uuid
+from uuid import UUID
 
 from ninja import Schema
 
@@ -32,7 +32,7 @@ class NFCTagOut(Schema):
     Add fields (e.g., uid, active, label) if you want them exposed.
     """
 
-    uuid: uuid.UUID
+    uuid: UUID
 
 
 # ---------------------------------------------------------------------------
@@ -43,7 +43,7 @@ class NFCTagOut(Schema):
 class PlantOutNested(Schema):
     """Nested plant info embedded in NFC tag responses."""
 
-    id: uuid.UUID
+    id: UUID
     name: str
     species: Optional[str] = None
 
@@ -54,7 +54,7 @@ class PlantOutNested(Schema):
 class BindPlantRequest(Schema):
     """Request body for binding an NFC tag to a plant."""
 
-    plant_id: uuid.UUID
+    plant_id: UUID
 
 
 class PlantLabelOut(Schema):
@@ -64,8 +64,8 @@ class PlantLabelOut(Schema):
     not its database PK) for the foreign-key reference.
     """
 
-    uuid: uuid.UUID
-    plant_id: Optional[uuid.UUID] = None
+    uuid: UUID
+    plant_id: Optional[UUID] = None
     plant: Optional[PlantOutNested] = None
     active: bool
     created_at: datetime
@@ -75,7 +75,7 @@ class PlantLabelOut(Schema):
         from_attributes = True
 
     @staticmethod
-    def resolve_plant_id(obj: object) -> Optional[uuid.UUID]:
+    def resolve_plant_id(obj: object) -> Optional[UUID]:
         """Return the plant's *public* UUID (not the integer PK)."""
         plant = getattr(obj, "plant", None)
         if plant is None:
