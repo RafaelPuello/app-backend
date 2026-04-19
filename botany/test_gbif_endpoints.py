@@ -7,7 +7,7 @@ Verifies:
 - Results are cached and pygbif is only called once per unique query
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 

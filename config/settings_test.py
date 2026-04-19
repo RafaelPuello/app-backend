@@ -68,6 +68,14 @@ DATABASES = {
 
 SITE_ID = 1
 
+# Cache — use in-memory cache for tests (same backend as production; isolated per process)
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "digidex-app-cache-test",
+    }
+}
+
 # JWT settings — load the ID service public key for test token validation.
 # The key pair lives in id/backend/config/keys/ (repo root is 4 levels above this file:
 # config/settings_test.py → config/ → backend/ → app/ → repo root).

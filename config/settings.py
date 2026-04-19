@@ -143,6 +143,16 @@ STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 
+# Cache
+# https://docs.djangoproject.com/en/6.0/topics/cache/
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "digidex-app-cache",
+    }
+}
+
+
 # JWT Authentication (token validation from ID service)
 # Load the ID service's RS256 public key for JWT validation
 _jwt_public_key_path = os.environ.get(

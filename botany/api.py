@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from ninja import Query
 from ninja.errors import HttpError
@@ -12,7 +12,6 @@ from ninja_extra.pagination import (
     NinjaPaginationResponseSchema,
     paginate,
 )
-from pygbif import occurrences
 
 from .schema import (
     ErrorOut,
@@ -20,8 +19,7 @@ from .schema import (
     PlantDetailOut,
     PlantOccurrenceOut,
 )
-from .services import GBIFError, GBIFNotFound, get_plant_details, search_gbif
-from .utils import resolve_gbif_id
+from .services import GBIFError, GBIFNotFound, get_plant_details, get_plant_occurrences, search_gbif
 
 
 @api_controller("/gbif", tags=["GBIF (Plants)"])
@@ -52,7 +50,7 @@ class GBIFController(ControllerBase):
             data = search_gbif(query=q, family=family, limit=limit, offset=offset)
         except GBIFError as exc:
             raise HttpError(500, str(exc))
-        return data
+        return GBIFSearchPaginatedOut(**data)
 
     @http_get(
         "/{str:identifier}",
@@ -79,24 +77,11 @@ class GBIFController(ControllerBase):
     )
     @paginate(LimitOffsetPagination)
     def list_plant_occurrences(self, identifier: str):
-        gbif_id = resolve_gbif_id(identifier)
-        if gbif_id is None:
-            raise HttpError(404, "Plant not found")
-
         try:
-            occ_data: Dict[str, Any] = occurrences.search(
-                taxon_key=gbif_id,
-                has_coordinate=True,
-                has_geospatial_issue=False,
-                mediatype="StillImage",
-                fields=["name", "media", "license", "month", "year", "eventDate"],
-                limit=300,
-            )
-        except Exception:
-            raise HttpError(500, "Error retrieving occurrences from GBIF API")
-
-        results: List[Dict[str, Any]] = occ_data.get("results", []) or []
-        if not results:
-            raise HttpError(404, "No occurrences found")
+            results = get_plant_occurrences(identifier)
+        except GBIFNotFound as exc:
+            raise HttpError(404, str(exc))
+        except GBIFError as exc:
+            raise HttpError(500, str(exc))
 
         return results
