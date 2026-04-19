@@ -63,6 +63,8 @@ python manage.py showmigrations   # Show migration status
 - `botany/` - Plant taxonomy and classification data
 
 **API Endpoints** (via django-ninja-extra, mounted at `/app/api/`)
+
+*NFC Tag Management:*
 - `GET /app/api/nfctags?include=plant` - List NFC tags (paginated); `include=plant` adds plant details via select_related
 - `POST /app/api/nfctags/register` - Register a new tag by UID
 - `POST /app/api/nfctags/scan` - Look up a tag by ASCII mirror
@@ -71,9 +73,18 @@ python manage.py showmigrations   # Show migration status
 - `DELETE /app/api/nfctags/{uuid}` - Hard delete a tag
 - `POST /app/api/nfctags/{uuid}/bind` - Bind tag to a plant (`{"plant_id": "<plant-uuid>"}`)
 - `POST /app/api/nfctags/{uuid}/unbind` - Unbind tag from its plant
-- `GET /app/api/gbif/{identifier}` - Fetch plant details from GBIF
-- `GET /app/api/gbif/{identifier}/occurrences` - Paginated GBIF occurrences
-- Swagger/OpenAPI: `GET /app/api/docs` (JSON schema: `GET /app/api/openapi.json`)
+
+*Pokedex Feature (Plant Catalog & Discovery):*
+- `GET /app/api/plants?search=query` - Search curated plant seed database (MVP: initial seed data)
+- `GET /app/api/plants/{plant_id}` - Retrieve plant details (scientific name, taxonomy, descriptions)
+- `GET /app/api/gbif/search?q=query` - Search GBIF species database (public, no auth required)
+- `GET /app/api/gbif/{gbif_key}` - Fetch detailed plant information from GBIF (taxonomy, common names, specimen count)
+- `GET /app/api/gbif/{gbif_key}/occurrences?limit=10` - Get paginated specimen occurrence records from GBIF (geographic distribution)
+
+*Documentation & Health:*
+- `GET /app/api/docs` - Swagger/OpenAPI interactive documentation
+- `GET /app/api/openapi.json` - OpenAPI schema JSON
+- `GET /app/api/health/` - Health check endpoint (no auth required)
 
 ### Models
 
@@ -94,6 +105,35 @@ Key fields:
 **Path parameter annotation gotcha:** Django's `{uuid:param}` path converter returns a Python `uuid.UUID` object. When the endpoint also has a body parameter (e.g., `payload: BindPlantRequest`), pydantic v2 validates path params strictly — the path parameter **must** be annotated as `uuid.UUID` in the function signature, otherwise pydantic defaults it to `str` and raises 422.
 
 Models use `django-modelcluster` for relational data clustering.
+
+### Pokedex Feature (Plant Catalog & Discovery)
+
+The Pokedex feature provides a plant catalog and discovery interface combining:
+- **Curated Seed Data**: Initial set of popular/common plants stored in the `botany.Plant` model
+- **GBIF Integration**: Real-time plant discovery via GBIF (Global Biodiversity Information Facility) API
+
+**Plant Model** (`botany/models.py`):
+- `Plant` model with fields: `gbif_key` (GBIF ID), `scientific_name`, `common_name`, `description`, `image_url`
+- Searchable by plant name, family, or GBIF taxonomy
+- Relationships: can be bound to multiple NFC tags via PlantLabel
+
+**Plant Metadata** (stored in database):
+- **Taxonomy**: Scientific classification (kingdom, phylum, class, order, family, genus, species)
+- **Common Names**: Multiple common names by region/language
+- **Descriptions**: Plant characteristics, habitat, uses
+- **Images**: Plant photos for visual identification
+
+**GBIF Integration** (`botany/services.py` or similar):
+- `gbif_search(query)` - Search GBIF taxonomy by name/keyword (public API, no auth)
+- `gbif_fetch(gbif_key)` - Fetch detailed plant data from GBIF including taxonomy and occurrence data
+- `gbif_occurrences(gbif_key)` - Fetch specimen occurrence records (geographic distribution, observation dates)
+
+**Use Cases**:
+1. **Browse Plant Catalog**: User opens Pokedex, browses curated plant database
+2. **Search by Name**: User searches for plant by common/scientific name (searches local seed + GBIF)
+3. **Discover Plants**: User explores GBIF for plants matching criteria (family, habitat, etc.)
+4. **Bind Plant to Tag**: User selects plant from catalog, binds to NFC tag via `/bind` endpoint
+5. **View Plant Details**: User scans NFC tag, sees linked plant info (metadata from local DB or GBIF)
 
 ### API & Authentication
 
