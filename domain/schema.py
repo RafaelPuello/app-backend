@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
@@ -41,14 +41,23 @@ class NFCTagOut(Schema):
 
 
 class PlantOutNested(Schema):
-    """Nested plant info embedded in NFC tag responses."""
+    """Full plant metadata embedded in NFC tag responses.
 
-    id: UUID
+    Exposes all user-facing plant fields so clients receive complete plant
+    data in a single bind/retrieve response without a separate plant lookup.
+    """
+
+    uuid: UUID
     name: str
-    species: Optional[str] = None
+    gbif_id: Optional[int] = None
+    description: str
+    acquisition_date: Optional[date] = None
+    location: str
+    notes: str
+    created_at: datetime
+    updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class BindPlantRequest(Schema):
@@ -84,8 +93,8 @@ class PlantLabelOut(Schema):
 
     @staticmethod
     def resolve_plant(obj: object) -> Optional[PlantOutNested]:
-        """Return nested plant data, or None when unbound."""
+        """Return full plant metadata, or None when tag is unbound."""
         plant = getattr(obj, "plant", None)
         if plant is None:
             return None
-        return PlantOutNested(id=plant.uuid, name=plant.name, species=None)
+        return PlantOutNested.from_orm(plant)

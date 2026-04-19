@@ -293,6 +293,90 @@ class TestNFCPlantBinding:
 
         assert response.status_code == 401
 
+    def test_bind_response_includes_full_plant_metadata(self, client) -> None:
+        """Bind response includes full plant metadata fields (not just name/uuid)."""
+        from datetime import date
+
+        user = _make_user("meta1")
+        plant = Plant.objects.create(
+            name="Ficus Lyrata",
+            user=user,
+            gbif_id=5284517,
+            description="Fiddle-leaf fig",
+            acquisition_date=date(2026, 1, 15),
+            location="Living room",
+            notes="Needs bright indirect light",
+        )
+        tag = _make_plant_label(user)
+
+        client.login(username=getattr(user, "username"), password="testpass")
+        response = client.post(
+            f"/app/api/nfctags/{tag.uuid}/bind",
+            data=f'{{"plant_id": "{plant.uuid}"}}',
+            content_type="application/json",
+            HTTP_AUTHORIZATION=_auth_header(user),
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        plant_data = data["plant"]
+        assert plant_data["uuid"] == str(plant.uuid)
+        assert plant_data["name"] == "Ficus Lyrata"
+        assert plant_data["gbif_id"] == 5284517
+        assert plant_data["description"] == "Fiddle-leaf fig"
+        assert plant_data["acquisition_date"] == "2026-01-15"
+        assert plant_data["location"] == "Living room"
+        assert plant_data["notes"] == "Needs bright indirect light"
+        assert "created_at" in plant_data
+        assert "updated_at" in plant_data
+
+    def test_bind_response_select_related_no_extra_queries(self, client) -> None:
+        """Bind endpoint uses select_related so plant data is available without extra query."""
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        user = _make_user("sel1")
+        plant = _make_plant(user, name="Peace Lily")
+        tag = _make_plant_label(user)
+
+        client.login(username=getattr(user, "username"), password="testpass")
+
+        with CaptureQueriesContext(connection) as ctx:
+            response = client.post(
+                f"/app/api/nfctags/{tag.uuid}/bind",
+                data=f'{{"plant_id": "{plant.uuid}"}}',
+                content_type="application/json",
+                HTTP_AUTHORIZATION=_auth_header(user),
+            )
+
+        assert response.status_code == 200
+        # With select_related, fetching the tag and its plant should not
+        # require a separate query for plant after the update.
+        # The key invariant: response contains plant data, so plant was loaded.
+        plant_data = response.json()["plant"]
+        assert plant_data["name"] == "Peace Lily"
+        # Verify the query count is reasonable (not an N+1 per plant field access)
+        # The exact number is implementation-dependent, but with select_related
+        # we expect well under 10 queries total for a single bind operation.
+        assert len(ctx.captured_queries) < 10
+
+    def test_unbind_response_plant_is_null_with_select_related(self, client) -> None:
+        """Unbind response includes plant=null with full schema shape intact."""
+        user = _make_user("unsel1")
+        plant = _make_plant(user, name="ZZ Plant")
+        tag = _make_plant_label(user, plant=plant)
+
+        client.login(username=getattr(user, "username"), password="testpass")
+        response = client.post(
+            f"/app/api/nfctags/{tag.uuid}/unbind",
+            HTTP_AUTHORIZATION=_auth_header(user),
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["plant"] is None
+        assert data["plant_id"] is None
+
 
 # ---------------------------------------------------------------------------
 # Create Plant from GBIF endpoint tests

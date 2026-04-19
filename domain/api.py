@@ -150,7 +150,7 @@ class DomainController(ControllerBase):
             payload: Contains ``plant_id`` (public UUID of the plant).
 
         Returns:
-            Updated PlantLabelOut with plant details populated.
+            Updated PlantLabelOut with full plant metadata populated.
 
         Raises:
             404: Tag not found, not owned by user, or plant not owned by user.
@@ -161,6 +161,10 @@ class DomainController(ControllerBase):
 
         tag.plant = plant
         tag.save(update_fields=["plant_id", "updated_at"])
+
+        # Reload with select_related so the plant object is pre-fetched and
+        # the serializer can access all plant fields without an extra query.
+        tag = PlantLabel.objects.select_related("plant").get(pk=tag.pk)
 
         return tag
 
@@ -182,6 +186,10 @@ class DomainController(ControllerBase):
 
         tag.plant = None
         tag.save(update_fields=["plant_id", "updated_at"])
+
+        # Reload with select_related for a consistent fetch pattern.
+        # plant will be None here since we just cleared it.
+        tag = PlantLabel.objects.select_related("plant").get(pk=tag.pk)
 
         return tag
 
