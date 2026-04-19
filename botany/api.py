@@ -66,7 +66,7 @@ class GBIFController(ControllerBase):
 
     @http_post(
         "/from-gbif",
-        response={201: PlantOut, 400: ErrorOut, 404: ErrorOut},
+        response={201: PlantOut, 400: ErrorOut, 401: ErrorOut, 404: ErrorOut},
         summary="Create a Plant record from a GBIF species (requires authentication)",
         auth=JWTAuthenticationBackend(),
     )
@@ -77,8 +77,8 @@ class GBIFController(ControllerBase):
         Requires a valid JWT Bearer token. The plant is scoped to the
         authenticated user and cannot be accessed by other users.
 
-        Returns HTTP 201 on success, 404 if the GBIF species is not found,
-        or 400 if acquisition_date is invalid.
+        Returns HTTP 201 on success, 401 if not authenticated, 404 if the
+        GBIF species is not found, or 400 if acquisition_date is invalid.
         """
         user = self.context.request.user
         try:
