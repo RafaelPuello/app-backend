@@ -263,3 +263,131 @@ class TestCreatePlantFromGBIF:
         assert data["name"] == "Solanum lycopersicum"
         assert data["location"] is None or data["location"] == ""
         assert data["notes"] is None or data["notes"] == ""
+
+
+# ---------------------------------------------------------------------------
+# POST /app/api/plants/{plant_uuid}/bind-nfc/ and
+# POST /app/api/plants/{plant_uuid}/unbind-nfc/
+# ---------------------------------------------------------------------------
+
+
+def _make_plant_for_nfc(user, name: str = "Monstera"):
+    """Create a Plant owned by user for NFC binding tests."""
+    from botany.models import Plant
+
+    return Plant.objects.create(name=name, user=user)
+
+
+@pytest.mark.django_db
+class TestNFCBinding:
+    """Tests for plant-centric NFC tag bind/unbind endpoints.
+
+    POST /app/api/plants/{plant_uuid}/bind-nfc/
+    POST /app/api/plants/{plant_uuid}/unbind-nfc/
+    """
+
+    def test_bind_nfc_to_plant_success(self, client):
+        """POST /app/api/plants/{uuid}/bind-nfc/ binds NFC tag to plant."""
+        user = _make_user("nfcbind1")
+        client.login(username=user.username, password="testpass")
+        plant = _make_plant_for_nfc(user, name="Monstera")
+
+        response = client.post(
+            f"/app/api/plants/{plant.uuid}/bind-nfc/",
+            data=json.dumps({"nfc_id": "04A1B2C3D4E5F6"}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=_auth_header(user),
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["nfc_id"] == "04A1B2C3D4E5F6"
+        assert data["plant_uuid"] == str(plant.uuid)
+
+        from domain.models import PlantLabel
+
+        label = PlantLabel.objects.get(uid="04A1B2C3D4E5F6", user=user)
+        assert label.plant == plant
+
+    def test_unbind_nfc_from_plant(self, client):
+        """POST /app/api/plants/{uuid}/unbind-nfc/ clears the plant binding."""
+        from domain.models import PlantLabel
+
+        user = _make_user("nfcunbind1")
+        client.login(username=user.username, password="testpass")
+        plant = _make_plant_for_nfc(user, name="Monstera")
+        PlantLabel.objects.create(uid="04B1C2D3E4F5A6", user=user, plant=plant)
+
+        response = client.post(
+            f"/app/api/plants/{plant.uuid}/unbind-nfc/",
+            data=json.dumps({"nfc_id": "04B1C2D3E4F5A6"}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=_auth_header(user),
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["nfc_id"] == "04B1C2D3E4F5A6"
+        assert data["plant_uuid"] is None
+
+        label = PlantLabel.objects.get(uid="04B1C2D3E4F5A6", user=user)
+        assert label.plant is None
+
+    def test_bind_nfc_requires_auth(self, client):
+        """POST /app/api/plants/{uuid}/bind-nfc/ without auth returns 401."""
+        user = _make_user("nfcauth1")
+        plant = _make_plant_for_nfc(user)
+
+        response = client.post(
+            f"/app/api/plants/{plant.uuid}/bind-nfc/",
+            data=json.dumps({"nfc_id": "04C1D2E3F4A5B6"}),
+            content_type="application/json",
+        )
+
+        assert response.status_code == 401
+
+    def test_bind_nfc_user_scoped(self, client):
+        """User can only bind NFC to their own plant — other user's plant returns 404."""
+        user_a = _make_user("nfcscope1a")
+        user_b = _make_user("nfcscope1b")
+        client.login(username=user_b.username, password="testpass")
+        other_plant = _make_plant_for_nfc(user_a, name="Other's Plant")
+
+        response = client.post(
+            f"/app/api/plants/{other_plant.uuid}/bind-nfc/",
+            data=json.dumps({"nfc_id": "04D1E2F3A4B5C6"}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=_auth_header(user_b),
+        )
+
+        assert response.status_code == 404
+
+    def test_bind_same_nfc_to_different_plant(self, client):
+        """User can rebind an NFC tag to a different plant."""
+        from domain.models import PlantLabel
+
+        user = _make_user("nfcrebind1")
+        client.login(username=user.username, password="testpass")
+        plant1 = _make_plant_for_nfc(user, name="Plant 1")
+        plant2 = _make_plant_for_nfc(user, name="Plant 2")
+
+        # Bind to plant1
+        response = client.post(
+            f"/app/api/plants/{plant1.uuid}/bind-nfc/",
+            data=json.dumps({"nfc_id": "04E1F2A3B4C5D6"}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=_auth_header(user),
+        )
+        assert response.status_code == 200
+
+        # Rebind to plant2
+        response = client.post(
+            f"/app/api/plants/{plant2.uuid}/bind-nfc/",
+            data=json.dumps({"nfc_id": "04E1F2A3B4C5D6"}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=_auth_header(user),
+        )
+        assert response.status_code == 200
+
+        label = PlantLabel.objects.get(uid="04E1F2A3B4C5D6", user=user)
+        assert label.plant == plant2

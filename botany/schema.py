@@ -147,3 +147,35 @@ class PlantOut(Schema):
     notes: str
     created_at: datetime
     updated_at: datetime
+
+
+class BindNFCIn(Schema):
+    """Request body for binding or unbinding an NFC tag to/from a plant."""
+
+    nfc_id: str = Field(..., description="NFC tag UID (hardware chip identifier)")
+
+
+class PlantNFCLabelOut(Schema):
+    """Response for NFC tag bind/unbind operations.
+
+    Returns the NFC tag's uid as nfc_id and the plant's public UUID (or null
+    when the tag is unbound).
+    """
+
+    nfc_id: str
+    plant_uuid: Optional[UUID] = None
+
+    model_config = {"from_attributes": True}
+
+    @staticmethod
+    def resolve_nfc_id(obj: object) -> str:
+        """Return the NFC tag's uid field as nfc_id."""
+        return getattr(obj, "uid", "")
+
+    @staticmethod
+    def resolve_plant_uuid(obj: object) -> Optional[UUID]:
+        """Return the plant's public UUID, or None when unbound."""
+        plant = getattr(obj, "plant", None)
+        if plant is None:
+            return None
+        return plant.uuid

@@ -1,5 +1,7 @@
 from typing import List, Optional
+from uuid import UUID
 
+from django.shortcuts import get_object_or_404
 from ninja import Query
 from ninja.errors import HttpError
 from ninja_extra import (
@@ -15,12 +17,15 @@ from ninja_extra.pagination import (
 )
 
 from config.auth import JWTAuthenticationBackend
+from domain.models import PlantLabel
 from .schema import (
+    BindNFCIn,
     CreatePlantFromGBIFIn,
     ErrorOut,
     GBIFSearchPaginatedOut,
     PlantCreateFromGBIFIn,
     PlantDetailOut,
+    PlantNFCLabelOut,
     PlantOccurrenceOut,
     PlantOut,
 )
@@ -177,6 +182,78 @@ class PlantSearchController(ControllerBase):
         except GBIFError as exc:
             raise HttpError(500, str(exc))
         return GBIFSearchPaginatedOut(**data)
+
+    @http_post(
+        "/{uuid:plant_uuid}/bind-nfc/",
+        response={200: PlantNFCLabelOut, 404: ErrorOut},
+        summary="Bind an NFC tag to a plant (requires authentication)",
+        auth=JWTAuthenticationBackend(),
+    )
+    def bind_nfc_to_plant(
+        self, plant_uuid: UUID, payload: BindNFCIn
+    ) -> PlantNFCLabelOut:
+        """Bind an NFC tag to a plant owned by the authenticated user.
+
+        Creates the PlantLabel if it does not exist for this user + nfc_id
+        combination, or updates it if it does (rebinding to a new plant).
+        The user must own the plant; otherwise 404 is returned.
+
+        Args:
+            plant_uuid: Public UUID of the plant to bind the tag to.
+            payload: BindNFCIn with nfc_id (NFC chip UID).
+
+        Returns:
+            200 OK with PlantNFCLabelOut containing nfc_id and plant_uuid.
+
+        Raises:
+            404: Plant not found or does not belong to the authenticated user.
+        """
+        user = self.context.request.user
+        plant = get_object_or_404(Plant, uuid=plant_uuid, user=user)
+
+        label, _ = PlantLabel.objects.update_or_create(
+            user=user,
+            uid=payload.nfc_id,
+            defaults={"plant": plant},
+        )
+        label = PlantLabel.objects.select_related("plant").get(pk=label.pk)
+        return label
+
+    @http_post(
+        "/{uuid:plant_uuid}/unbind-nfc/",
+        response={200: PlantNFCLabelOut, 404: ErrorOut},
+        summary="Unbind an NFC tag from a plant (requires authentication)",
+        auth=JWTAuthenticationBackend(),
+    )
+    def unbind_nfc_from_plant(
+        self, plant_uuid: UUID, payload: BindNFCIn
+    ) -> PlantNFCLabelOut:
+        """Unbind an NFC tag from a plant, clearing the plant reference.
+
+        The user must own the plant. The PlantLabel is retained but its plant
+        FK is set to null. If the tag does not exist for this user, it is
+        created unbound so the operation is always idempotent.
+
+        Args:
+            plant_uuid: Public UUID of the plant being unbound from.
+            payload: BindNFCIn with nfc_id (NFC chip UID).
+
+        Returns:
+            200 OK with PlantNFCLabelOut containing nfc_id and plant_uuid=null.
+
+        Raises:
+            404: Plant not found or does not belong to the authenticated user.
+        """
+        user = self.context.request.user
+        get_object_or_404(Plant, uuid=plant_uuid, user=user)
+
+        label, _ = PlantLabel.objects.update_or_create(
+            user=user,
+            uid=payload.nfc_id,
+            defaults={"plant": None},
+        )
+        label = PlantLabel.objects.select_related("plant").get(pk=label.pk)
+        return label
 
     @http_post(
         "/from-gbif/",
