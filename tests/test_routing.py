@@ -14,6 +14,7 @@ See CLAUDE.md "Routing Validation" for architecture notes.
 """
 
 import pytest
+from django.conf import settings
 from django.test import Client
 
 
@@ -120,4 +121,23 @@ class TestAppRouting:
         response_schema = client.get("/app/api/openapi.json")
         assert response_schema.status_code == 200, (
             f"OpenAPI JSON at /app/api/openapi.json returned {response_schema.status_code}."
+        )
+
+
+class TestSettings:
+    """Verify required Django settings are configured correctly."""
+
+    def test_nfc_tag_model_setting_is_plant_label(self):
+        """NFC_TAG_MODEL must be set to 'domain.PlantLabel' (ADR #0002).
+
+        This setting tells the nfctags app which concrete model implements
+        the abstract NFC tag base class. PlantLabel is the MVP implementation.
+        """
+        assert hasattr(settings, "NFC_TAG_MODEL"), (
+            "NFC_TAG_MODEL setting is missing from Django settings. "
+            "Add NFC_TAG_MODEL = 'domain.PlantLabel' to config/settings.py "
+            "and config/settings_test.py (see ADR #0002)."
+        )
+        assert settings.NFC_TAG_MODEL == "domain.PlantLabel", (
+            f"NFC_TAG_MODEL must be 'domain.PlantLabel', got '{settings.NFC_TAG_MODEL}'."
         )

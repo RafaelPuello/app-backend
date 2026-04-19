@@ -39,6 +39,11 @@ if DEBUG:
     ]
 
 
+# NFC Tag Model (ADR #0002 — NFC Plant Binding)
+# Concrete model used for NFC tag operations. PlantLabel is the MVP implementation.
+NFC_TAG_MODEL = "domain.PlantLabel"
+
+
 # Application definition
 
 INSTALLED_APPS = [
