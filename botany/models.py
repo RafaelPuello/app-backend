@@ -25,9 +25,26 @@ class Plant(ClusterableModel):
     )
     gbif_id = models.PositiveBigIntegerField(
         blank=True,
-        default=6,
+        null=True,
         verbose_name=_("GBIF ID"),
         help_text=_("The GBIF ID of the plant."),
+    )
+    acquisition_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_("acquisition date"),
+        help_text=_("The date this plant was acquired."),
+    )
+    location = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_("location"),
+        help_text=_("Where this plant is kept (e.g. 'Living room')."),
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name=_("notes"),
+        help_text=_("Free-form notes about this plant."),
     )
     user = models.ForeignKey(
         get_user_model(),
