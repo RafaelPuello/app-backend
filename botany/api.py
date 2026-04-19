@@ -6,6 +6,7 @@ from ninja_extra import (
     ControllerBase,
     api_controller,
     http_get,
+    http_post,
 )
 from ninja_extra.pagination import (
     LimitOffsetPagination,
@@ -13,13 +14,24 @@ from ninja_extra.pagination import (
     paginate,
 )
 
+from config.auth import JWTAuthenticationBackend
 from .schema import (
+    CreatePlantFromGBIFIn,
     ErrorOut,
     GBIFSearchPaginatedOut,
     PlantDetailOut,
     PlantOccurrenceOut,
+    PlantOut,
 )
-from .services import GBIFError, GBIFNotFound, get_plant_details, get_plant_occurrences, search_gbif
+from .services import (
+    GBIFError,
+    GBIFNotFound,
+    create_plant_from_gbif,
+    get_plant_details,
+    get_plant_occurrences,
+    plant_to_dict,
+    search_gbif,
+)
 
 
 @api_controller("/gbif", tags=["GBIF (Plants)"])
@@ -51,6 +63,40 @@ class GBIFController(ControllerBase):
         except GBIFError as exc:
             raise HttpError(500, str(exc))
         return GBIFSearchPaginatedOut(**data)
+
+    @http_post(
+        "/from-gbif",
+        response={201: PlantOut, 400: ErrorOut, 404: ErrorOut},
+        summary="Create a Plant record from a GBIF species (requires authentication)",
+        auth=JWTAuthenticationBackend(),
+    )
+    def create_plant_from_gbif_endpoint(self, payload: CreatePlantFromGBIFIn):
+        """
+        Create a user-scoped Plant record by fetching species data from GBIF.
+
+        Requires a valid JWT Bearer token. The plant is scoped to the
+        authenticated user and cannot be accessed by other users.
+
+        Returns HTTP 201 on success, 404 if the GBIF species is not found,
+        or 400 if acquisition_date is invalid.
+        """
+        user = self.context.request.user
+        try:
+            plant = create_plant_from_gbif(
+                user=user,
+                gbif_id=payload.gbif_id,
+                acquisition_date=payload.acquisition_date,
+                location=payload.location,
+                notes=payload.notes,
+            )
+        except GBIFNotFound as exc:
+            raise HttpError(404, str(exc))
+        except GBIFError as exc:
+            raise HttpError(500, str(exc))
+        except ValueError as exc:
+            raise HttpError(400, str(exc))
+
+        return 201, plant_to_dict(plant)
 
     @http_get(
         "/{str:identifier}",

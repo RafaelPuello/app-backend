@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 from ninja import Schema, Field
 
@@ -101,3 +102,32 @@ class GBIFSearchPaginatedOut(Schema):
     limit: int
     offset: int
     results: List[GBIFSearchResultOut]
+
+
+class CreatePlantFromGBIFIn(Schema):
+    """Input schema for creating a Plant record from a GBIF species."""
+
+    gbif_id: int = Field(..., description="GBIF usage key for the species")
+    acquisition_date: Optional[str] = Field(
+        default=None, description="ISO date string (YYYY-MM-DD) when the plant was acquired"
+    )
+    location: Optional[str] = Field(
+        default=None, description="Where this plant is kept (e.g. 'Living room')"
+    )
+    notes: Optional[str] = Field(
+        default=None, description="Free-form notes about this plant"
+    )
+
+
+class PlantOut(Schema):
+    """Output schema for a Plant record."""
+
+    uuid: UUID
+    name: str
+    gbif_id: Optional[int] = None
+    description: str
+    acquisition_date: Optional[date] = None
+    location: str
+    notes: str
+    created_at: datetime
+    updated_at: datetime

@@ -1,5 +1,6 @@
 import time
 import uuid as uuid_module
+from unittest.mock import patch
 
 import jwt
 import pytest
@@ -291,3 +292,115 @@ class TestNFCPlantBinding:
         )
 
         assert response.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Create Plant from GBIF endpoint tests
+# ---------------------------------------------------------------------------
+
+MOCK_GBIF_DETAILS_MONSTERA = {
+    "key": 2684241,
+    "usageKey": 2684241,
+    "scientificName": "Monstera deliciosa Liebm.",
+    "canonicalName": "Monstera deliciosa",
+    "rank": "SPECIES",
+    "kingdom": "Plantae",
+    "family": "Araceae",
+}
+
+
+@pytest.mark.django_db
+class TestCreatePlantFromGBIF:
+    """Tests for POST /app/api/gbif/from-gbif endpoint."""
+
+    def test_create_plant_from_gbif_authenticated(self, client) -> None:
+        """Authenticated user can create a plant from a GBIF ID."""
+        user = _make_user("gbif1")
+        client.login(username=getattr(user, "username"), password="testpass")
+
+        with patch("botany.services.species") as mock_species:
+            mock_species.name_usage.return_value = MOCK_GBIF_DETAILS_MONSTERA
+
+            response = client.post(
+                "/app/api/gbif/from-gbif",
+                data='{"gbif_id": 2684241, "acquisition_date": "2026-04-01", "location": "Living room", "notes": "New arrival"}',
+                content_type="application/json",
+                HTTP_AUTHORIZATION=_auth_header(user),
+            )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["gbif_id"] == 2684241
+        assert data["name"] == "Monstera deliciosa"
+        assert data["acquisition_date"] == "2026-04-01"
+        assert data["location"] == "Living room"
+        assert data["notes"] == "New arrival"
+        assert "uuid" in data
+        assert "created_at" in data
+        assert "updated_at" in data
+
+        # Verify the plant was saved in the database scoped to the user
+        from botany.models import Plant
+        plant = Plant.objects.get(uuid=data["uuid"])
+        assert plant.user == user
+        assert plant.gbif_id == 2684241
+
+    def test_create_plant_from_gbif_requires_auth(self, client) -> None:
+        """Unauthenticated request to /gbif/from-gbif returns 401."""
+        response = client.post(
+            "/app/api/gbif/from-gbif",
+            data='{"gbif_id": 2684241}',
+            content_type="application/json",
+        )
+        assert response.status_code == 401
+
+    def test_create_plant_from_gbif_invalid_date(self, client) -> None:
+        """Invalid acquisition_date returns 400."""
+        user = _make_user("gbif3")
+        client.login(username=getattr(user, "username"), password="testpass")
+
+        with patch("botany.services.species") as mock_species:
+            mock_species.name_usage.return_value = MOCK_GBIF_DETAILS_MONSTERA
+
+            response = client.post(
+                "/app/api/gbif/from-gbif",
+                data='{"gbif_id": 2684241, "acquisition_date": "not-a-date"}',
+                content_type="application/json",
+                HTTP_AUTHORIZATION=_auth_header(user),
+            )
+
+        assert response.status_code == 400
+
+    def test_create_plant_from_gbif_not_found(self, client) -> None:
+        """GBIF species not found returns 404."""
+        user = _make_user("gbif4")
+        client.login(username=getattr(user, "username"), password="testpass")
+
+        with patch("botany.services.species") as mock_species:
+            mock_species.name_usage.return_value = {}
+
+            response = client.post(
+                "/app/api/gbif/from-gbif",
+                data='{"gbif_id": 9999999}',
+                content_type="application/json",
+                HTTP_AUTHORIZATION=_auth_header(user),
+            )
+
+        assert response.status_code == 404
+
+    def test_user_scoped_plants(self, client) -> None:
+        """Plants created by user A are not accessible in user B's plant list."""
+        user_a = _make_user("gbif5a")
+        user_b = _make_user("gbif5b")
+
+        # Create a plant for user A directly in the DB
+        _make_plant(user_a, name="User A Plant")
+
+        # user B has no plants
+        from botany.models import Plant
+        plants_b = Plant.objects.filter(user=user_b)
+        assert plants_b.count() == 0
+
+        # user A has one plant
+        plants_a = Plant.objects.filter(user=user_a)
+        assert plants_a.count() == 1

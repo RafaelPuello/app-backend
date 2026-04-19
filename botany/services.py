@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Any, Dict, List, Optional
 
 from django.core.cache import cache
@@ -230,6 +231,82 @@ def _normalize_search_result(raw: Dict[str, Any]) -> Dict[str, Any]:
         "family": raw.get("family"),
         "genus": raw.get("genus"),
         "commonNames": common_names,
+    }
+
+
+def create_plant_from_gbif(
+    user: Any,
+    gbif_id: int,
+    acquisition_date: Optional[str] = None,
+    location: Optional[str] = None,
+    notes: Optional[str] = None,
+) -> Any:
+    """
+    Fetch GBIF species data and create a user-scoped Plant record.
+
+    Args:
+        user: Authenticated Django User who will own the plant.
+        gbif_id: GBIF usage key for the species.
+        acquisition_date: Optional ISO date string (YYYY-MM-DD).
+        location: Optional location string. Defaults to empty string.
+        notes: Optional free-form notes. Defaults to empty string.
+
+    Returns:
+        The newly created Plant instance.
+
+    Raises:
+        GBIFNotFound: If the GBIF species cannot be found.
+        GBIFError: If the GBIF API call fails.
+        ValueError: If acquisition_date is provided but not a valid ISO date.
+    """
+    # Import here to avoid circular imports at module level
+    from botany.models import Plant
+
+    details = get_plant_details(str(gbif_id))
+
+    # Resolve name: prefer canonicalName, fall back to scientificName
+    name: str = details.get("canonicalName") or details.get("scientificName") or ""
+    if not name:
+        raise GBIFNotFound("Plant not found")
+
+    parsed_date: Optional[date] = None
+    if acquisition_date is not None:
+        try:
+            parsed_date = date.fromisoformat(acquisition_date)
+        except (ValueError, TypeError) as exc:
+            raise ValueError(f"Invalid acquisition_date: {acquisition_date!r}") from exc
+
+    plant = Plant.objects.create(
+        user=user,
+        name=name,
+        gbif_id=gbif_id,
+        acquisition_date=parsed_date,
+        location=location or "",
+        notes=notes or "",
+    )
+    return plant
+
+
+def plant_to_dict(plant: Any) -> Dict[str, Any]:
+    """
+    Serialize a Plant instance to a dictionary for API responses.
+
+    Args:
+        plant: A Plant model instance.
+
+    Returns:
+        Dictionary with plant fields suitable for PlantOut schema.
+    """
+    return {
+        "uuid": plant.uuid,
+        "name": plant.name,
+        "gbif_id": plant.gbif_id,
+        "description": plant.description,
+        "acquisition_date": plant.acquisition_date,
+        "location": plant.location,
+        "notes": plant.notes,
+        "created_at": plant.created_at,
+        "updated_at": plant.updated_at,
     }
 
 
