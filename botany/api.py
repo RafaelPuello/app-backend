@@ -31,6 +31,7 @@ from .services import (
     get_plant_occurrences,
     plant_to_dict,
     search_gbif,
+    search_gbif_species,
 )
 
 
@@ -131,3 +132,46 @@ class GBIFController(ControllerBase):
             raise HttpError(500, str(exc))
 
         return results
+
+
+@api_controller("/plants", tags=["Plants"])
+class PlantSearchController(ControllerBase):
+    """
+    Plant discovery endpoints for the Pokedex feature.
+
+    Provides GBIF species search for the frontend plant catalog grid.
+    All endpoints are public (no authentication required).
+    """
+
+    @http_get(
+        "/search-gbif/",
+        response={200: GBIFSearchPaginatedOut, 500: ErrorOut},
+        summary="Search GBIF for plant species by name (public)",
+        auth=None,
+    )
+    def search_gbif_endpoint(
+        self,
+        q: str,
+        family: Optional[str] = None,
+        limit: int = Query(default=20, ge=1, le=100),
+        offset: int = Query(default=0, ge=0),
+    ) -> GBIFSearchPaginatedOut:
+        """
+        Search the GBIF backbone taxonomy for plant species matching the given query.
+
+        Results are cached for 1 hour. No authentication is required.
+
+        Args:
+            q: Search query (scientific or common name, required).
+            family: Optional taxonomic family filter (e.g. "Solanaceae").
+            limit: Results per page (default 20, max 100).
+            offset: Pagination offset (default 0).
+
+        Returns:
+            GBIFSearchPaginatedOut with count, limit, offset, and paginated results.
+        """
+        try:
+            data = search_gbif_species(q=q, family=family, limit=limit, offset=offset)
+        except GBIFError as exc:
+            raise HttpError(500, str(exc))
+        return GBIFSearchPaginatedOut(**data)

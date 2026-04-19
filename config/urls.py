@@ -12,7 +12,7 @@ from django.contrib import admin
 from django.urls import path, include
 from ninja_extra import NinjaExtraAPI
 
-from botany.api import GBIFController
+from botany.api import GBIFController, PlantSearchController
 from domain.api import DomainController
 
 api = NinjaExtraAPI(
@@ -21,7 +21,7 @@ api = NinjaExtraAPI(
     description="REST API for NFC tag management and botanical data.",
     urls_namespace="app_api",
 )
-api.register_controllers(DomainController, GBIFController)
+api.register_controllers(DomainController, GBIFController, PlantSearchController)
 
 
 @api.get("/health/", auth=None, tags=["Health"])
