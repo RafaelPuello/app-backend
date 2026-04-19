@@ -9,6 +9,10 @@ class ErrorOut(Schema):
     error: str = Field(..., description="Human-readable error message")
 
 
+class ConflictOut(Schema):
+    detail: str = Field(..., description="Human-readable conflict message")
+
+
 class PlantDetailOut(Schema):
     key: int
     nubKey: Optional[int] = None
@@ -145,8 +149,18 @@ class PlantOut(Schema):
     acquisition_date: Optional[date] = None
     location: str
     notes: str
+    bound: bool = False
     created_at: datetime
     updated_at: datetime
+
+
+class PaginatedPlantOut(Schema):
+    """Paginated wrapper for a list of Plant records."""
+
+    count: int
+    limit: int
+    offset: int
+    results: List[PlantOut]
 
 
 class BindNFCIn(Schema):
