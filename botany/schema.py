@@ -70,3 +70,34 @@ class PlantOccurrenceOut(Schema):
     year: Optional[int] = None
     eventDate: Optional[str] = None
     media: Optional[List[Dict[str, Any]]] = None
+
+
+class GBIFSearchResultOut(Schema):
+    """A single species result from the GBIF species search API."""
+
+    usageKey: int
+    scientificName: Optional[str] = None
+    canonicalName: Optional[str] = None
+    rank: Optional[str] = None
+    kingdom: Optional[str] = None
+    phylum: Optional[str] = None
+    class_: Optional[str] = Field(default=None, alias="class")
+    order: Optional[str] = None
+    family: Optional[str] = None
+    genus: Optional[str] = None
+    commonNames: List[str] = Field(default_factory=list)
+
+    model_config = {
+        "populate_by_name": True,
+        "alias_generator": None,
+        "protected_namespaces": (),
+    }
+
+
+class GBIFSearchPaginatedOut(Schema):
+    """Paginated wrapper for GBIF species search results."""
+
+    count: int
+    limit: int
+    offset: int
+    results: List[GBIFSearchResultOut]

@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+from django.core.cache import cache
 from django.conf import settings
 from pygbif import species, occurrences
 
@@ -139,6 +140,96 @@ def get_plant_summary(
         "details": details,
         "occurrences": occurrences_list,
         "summary": summary,
+    }
+
+
+_GBIF_SEARCH_CACHE_TIMEOUT = 3600  # 1 hour
+
+
+def search_gbif(
+    query: str,
+    family: Optional[str] = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> Dict[str, Any]:
+    """
+    Search GBIF for species matching `query`, with optional family filter.
+
+    Results are cached for 1 hour using Django's cache framework. The cache key
+    encodes all parameters so distinct queries never share cached data.
+
+    Args:
+        query: Free-text species search term (required).
+        family: Taxonomic family filter (optional, e.g. "Araceae").
+        limit: Maximum number of results to return (default 20, max 100).
+        offset: Zero-based result offset for pagination (default 0).
+
+    Returns:
+        Dict with keys: count, limit, offset, results (list of species dicts).
+        Each result dict includes: usageKey, scientificName, canonicalName,
+        rank, kingdom, phylum, class, order, family, genus, commonNames.
+
+    Raises:
+        GBIFError: If the pygbif call fails for any reason.
+    """
+    cache_key = f"gbif_search:{query}:{family}:{limit}:{offset}"
+
+    def _fetch() -> Dict[str, Any]:
+        kwargs: Dict[str, Any] = {
+            "q": query,
+            "limit": limit,
+            "offset": offset,
+        }
+        if family is not None:
+            kwargs["family"] = family
+
+        try:
+            raw: Dict[str, Any] = species.search(**kwargs)
+        except Exception as exc:
+            raise GBIFError("Error searching GBIF") from exc
+
+        raw_results: List[Dict[str, Any]] = raw.get("results", []) or []
+        normalized: List[Dict[str, Any]] = [
+            _normalize_search_result(r) for r in raw_results
+        ]
+
+        return {
+            "count": raw.get("count", 0),
+            "limit": raw.get("limit", limit),
+            "offset": raw.get("offset", offset),
+            "results": normalized,
+        }
+
+    result: Dict[str, Any] = cache.get_or_set(
+        cache_key, _fetch, _GBIF_SEARCH_CACHE_TIMEOUT
+    )
+    return result
+
+
+def _normalize_search_result(raw: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Normalize a single GBIF search result dict to match GBIFSearchResultOut.
+
+    Extracts vernacular names from the nested vernacularNames list and flattens
+    them into a plain list of strings under ``commonNames``.
+    """
+    vernacular: List[Dict[str, Any]] = raw.get("vernacularNames", []) or []
+    common_names: List[str] = [
+        v["vernacularName"] for v in vernacular if v.get("vernacularName")
+    ]
+
+    return {
+        "usageKey": raw["usageKey"],
+        "scientificName": raw.get("scientificName"),
+        "canonicalName": raw.get("canonicalName"),
+        "rank": raw.get("rank"),
+        "kingdom": raw.get("kingdom"),
+        "phylum": raw.get("phylum"),
+        "class": raw.get("class"),
+        "order": raw.get("order"),
+        "family": raw.get("family"),
+        "genus": raw.get("genus"),
+        "commonNames": common_names,
     }
 
 
