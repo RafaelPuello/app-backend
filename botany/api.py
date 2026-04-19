@@ -19,10 +19,12 @@ from .schema import (
     CreatePlantFromGBIFIn,
     ErrorOut,
     GBIFSearchPaginatedOut,
+    PlantCreateFromGBIFIn,
     PlantDetailOut,
     PlantOccurrenceOut,
     PlantOut,
 )
+from .models import Plant
 from .services import (
     GBIFError,
     GBIFNotFound,
@@ -175,3 +177,45 @@ class PlantSearchController(ControllerBase):
         except GBIFError as exc:
             raise HttpError(500, str(exc))
         return GBIFSearchPaginatedOut(**data)
+
+    @http_post(
+        "/from-gbif/",
+        response={201: PlantOut, 401: ErrorOut},
+        summary="Create a Plant from GBIF data with user-supplied name (requires authentication)",
+        auth=JWTAuthenticationBackend(),
+    )
+    def create_plant_from_gbif_endpoint(self, payload: PlantCreateFromGBIFIn):
+        """
+        Create a user-scoped Plant record using GBIF species data and a caller-supplied name.
+
+        Unlike the /gbif/from-gbif endpoint, this endpoint does not call the GBIF API —
+        the caller provides the name directly (e.g., after selecting from search results).
+        The plant record is scoped to the authenticated user.
+
+        Args:
+            payload: PlantCreateFromGBIFIn with gbif_id, name, and optional metadata.
+
+        Returns:
+            201 Created with the new Plant record serialized as PlantOut.
+
+        Example::
+
+            POST /app/api/plants/from-gbif/
+            {
+                "gbif_id": 5289683,
+                "name": "Solanum lycopersicum",
+                "acquisition_date": "2026-04-18",
+                "location": "Nursery",
+                "notes": "Started from seed"
+            }
+        """
+        user = self.context.request.user
+        plant = Plant.objects.create(
+            user=user,
+            gbif_id=payload.gbif_id,
+            name=payload.name,
+            acquisition_date=payload.acquisition_date,
+            location=payload.location or "",
+            notes=payload.notes or "",
+        )
+        return 201, plant_to_dict(plant)

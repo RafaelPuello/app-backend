@@ -119,6 +119,22 @@ class CreatePlantFromGBIFIn(Schema):
     )
 
 
+class PlantCreateFromGBIFIn(Schema):
+    """Request body for creating a Plant from GBIF data (user-supplied name)."""
+
+    gbif_id: int = Field(..., description="GBIF usage key (species ID)")
+    name: str = Field(..., description="Plant name (scientific or common)")
+    acquisition_date: Optional[date] = Field(
+        default=None, description="Date when the plant was acquired"
+    )
+    location: Optional[str] = Field(
+        default=None, description="Where this plant is kept (e.g. 'Nursery')"
+    )
+    notes: Optional[str] = Field(
+        default=None, description="Free-form notes about this plant"
+    )
+
+
 class PlantOut(Schema):
     """Output schema for a Plant record."""
 
