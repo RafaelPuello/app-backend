@@ -234,6 +234,35 @@ def _normalize_search_result(raw: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def search_gbif_species(
+    q: str,
+    family: Optional[str] = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> Dict[str, Any]:
+    """
+    Search GBIF for plant species matching ``q``, with optional family filter.
+
+    Public alias for :func:`search_gbif` using the ``q`` parameter name that
+    matches the GBIF API convention and the Pokedex frontend contract.
+
+    Results are cached for 1 hour using Django's cache framework.
+
+    Args:
+        q: Free-text species search term (scientific or common name).
+        family: Taxonomic family filter (optional, e.g. "Solanaceae").
+        limit: Maximum results to return (default 20, max 100).
+        offset: Zero-based pagination offset (default 0).
+
+    Returns:
+        Dict with keys: count, limit, offset, results (list of species dicts).
+
+    Raises:
+        GBIFError: If the pygbif call fails for any reason.
+    """
+    return search_gbif(query=q, family=family, limit=limit, offset=offset)
+
+
 def create_plant_from_gbif(
     user: Any,
     gbif_id: int,
