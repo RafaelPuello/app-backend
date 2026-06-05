@@ -1,57 +1,8 @@
 # CLAUDE.md - App Backend
 
-This file provides backend-specific guidance. For frontend details and full service overview, see `/app/CLAUDE.md`.
+Django 6.0 REST API for NFC tag management, plant discovery (Pokedex via GBIF), and collections. Uses django-ninja for REST endpoints, JWT authentication from ID service.
 
-## Project Overview
-
-Django 6.0 backend API for the DigiDex app. Provides REST API for managing NFC tags, plant collections, and domain-specific data. Uses django-ninja for REST endpoints, django-modelcluster for clustered models, and supports authentication via JWT tokens from the ID service.
-
-## Commands
-
-### Setup & Development
-```bash
-cd backend
-pip install -r requirements.txt
-python manage.py migrate          # Create database tables
-python manage.py runserver 0.0.0.0:8000
-```
-
-### Testing
-```bash
-# Install dependencies (includes dev deps for testing)
-pip install -r requirements.txt -r requirements-dev.txt
-
-# Run all tests (uses config.settings_test via pytest.ini)
-DJANGO_SETTINGS_MODULE=config.settings_test pytest
-
-# Run routing tests only
-DJANGO_SETTINGS_MODULE=config.settings_test pytest tests/test_routing.py -v
-
-# Run tests for a specific app
-DJANGO_SETTINGS_MODULE=config.settings_test pytest domain/ -v
-
-# With coverage
-DJANGO_SETTINGS_MODULE=config.settings_test pytest -v --cov
-
-# Single test
-DJANGO_SETTINGS_MODULE=config.settings_test pytest domain/tests.py::test_list_parity
-```
-
-**Test settings:** `config/settings_test.py` uses SQLite in-memory and loads the ID service JWT public key from `../../id/backend/config/keys/jwt_public_key.pem` (relative to repo root) for authenticating API test requests. Tests skip automatically if the key file is not found. The `DJANGO_SETTINGS_MODULE` env var must be set explicitly when running locally (the `.env.dev` file sets it to `config.settings` which requires PostgreSQL; override it on the command line as shown above).
-
-**Python interpreter:** The venv at `backend/venv` uses Python 3.12.2 (from `/usr/local/`)
-which lacks the compiled `_sqlite3` module on this host. Use the pyenv Python instead:
-```bash
-DJANGO_SETTINGS_MODULE=config.settings_test ~/.pyenv/versions/3.12.5/bin/pytest tests/test_routing.py -v
-```
-
-### Utilities
-```bash
-python manage.py createsuperuser  # Create admin user
-python manage.py shell            # Django shell for manual testing
-python manage.py makemigrations   # Create new migrations
-python manage.py showmigrations   # Show migration status
-```
+For full service overview, see `/app/CLAUDE.md`. For setup and command reference, see README.md.
 
 ## Architecture
 
@@ -216,32 +167,14 @@ class NFCTagController:
 - PostgreSQL in production, SQLite in development
 - Connection pooling: `conn_max_age=600`, health checks enabled
 
-## Testing
+## Conventions
 
-### Test Structure
-- Test files: `domain/tests.py` and other app-level test files
-- Framework: `pytest` with `pytest-django`
-- Patterns: Factory fixtures, database state management, API parity testing
-
-### Key Test Patterns
-- `@pytest.mark.django_db` - Access to database in tests
-- `client.login()` - Session-based authentication for tests
-- API and HTML view parity tests (verify same data via different endpoints)
-- User-scoped data creation via `NFCTagService(user=user)`
-
-## Environment Variables
-
-### Required
-- `DJANGO_SECRET_KEY` - Secret key for Django
-- `DATABASE_URL` - Database connection string (e.g., `postgresql://user:pass@localhost/dbname`)
-
-### Optional (with defaults)
-- `DJANGO_DEBUG` - Set to "True" for development (default: "False")
-- `DJANGO_ALLOWED_HOSTS` - Comma-separated list of allowed hosts (default: "localhost")
-
-### Development
-- `.env.dev` file in `backend/` directory sets development variables
-- `.env.prod` file for production settings
+- **App structure**: Feature-based (domain/, nfctags/, botany/); models, API controllers, tests in each app
+- **Migrations**: Always version-controlled in `*/migrations/`; never modify applied migrations
+- **UUIDs**: Public-facing; internal models use auto-increment IDs
+- **Authentication**: JWT (RS256) for API; session auth for admin UI
+- **Database queries**: Use `select_related`/`prefetch_related` to prevent N+1; test coverage required
+- **Type hints**: All signatures must be typed; use `uuid.UUID` for path parameters (pydantic v2 strict mode)
 
 ## Key Files
 
@@ -332,119 +265,11 @@ The app currently provides API endpoints via django-ninja. HTML templates are no
 - **Secret key**: Must be strong, unique, and secret; use secrets management system
 - **WhiteNoise**: Not configured but can be added for static file serving from Django
 
-## Common Tasks
+## Gotchas
 
-### Add a New API Endpoint
-
-**Step 1: Define the Model** (if needed)
-```python
-# app/nfctags/models.py
-from django.db import models
-
-class PlantLabel(models.Model):
-    uuid = models.UUIDField(unique=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
-```
-
-**Step 2: Create Schema** (for serialization)
-```python
-# app/nfctags/schema.py
-from ninja import Schema
-from uuid import UUID
-
-class PlantLabelOut(Schema):
-    uuid: UUID
-    title: str
-    created_at: str
-```
-
-**Step 3: Create Controller** (django-ninja-extra)
-```python
-# app/nfctags/api.py
-from django_ninja_extra import api_controller, http_get, http_post
-from django_ninja_jwt.authentication import JWTAuthentication
-from .models import PlantLabel
-from .schema import PlantLabelOut
-
-@api_controller("/nfctags", auth=JWTAuthentication())
-class NFCTagController:
-    @http_get("/", response=list[PlantLabelOut])
-    def list_tags(self, request):
-        """List all NFC tags for authenticated user"""
-        return PlantLabel.objects.filter(user=request.user)
-    
-    @http_get("/{uuid}/", response=PlantLabelOut)
-    def get_tag(self, request, uuid: str):
-        """Get single NFC tag by UUID"""
-        tag = PlantLabel.objects.get(uuid=uuid, user=request.user)
-        return tag
-    
-    @http_post("/", response=PlantLabelOut)
-    def create_tag(self, request, payload: PlantLabelOut):
-        """Create new NFC tag"""
-        tag = PlantLabel.objects.create(**payload.dict(), user=request.user)
-        return tag
-```
-
-**Step 4: Register Controller**
-```python
-# app/config/api.py
-from django_ninja_extra import NinjaExtraAPI
-from ..nfctags.api import NFCTagController
-
-api = NinjaExtraAPI()
-api.register_controllers(NFCTagController)
-```
-
-**Step 5: Add to URL Configuration**
-```python
-# app/config/urls.py
-from django.urls import path
-from .api import api
-
-urlpatterns = [
-    path("app/api/", api.urls),  # Full path /app/api/*
-]
-```
-
-**Step 6: Add Tests**
-```python
-# app/nfctags/tests.py
-import pytest
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-@pytest.mark.django_db
-def test_list_nfctags(client):
-    """Test listing NFC tags"""
-    user = User.objects.create_user(email="test@example.com", password="test")
-    client.force_authenticate(user)
-    response = client.get("/app/api/nfctags/")
-    assert response.status_code == 200
-    assert response.json() == []
-```
-
-### Add Tests
-
-```bash
-cd backend
-pytest domain/tests.py::test_your_test_name -v
-```
-
-### Check Database State
-
-```bash
-python manage.py shell
->>> from domain.models import PlantLabel
->>> PlantLabel.objects.all()
-```
-
-### Inspect API Schema
-
-Start the server and visit `http://localhost:8000/app/api/docs` for Swagger UI.
-Raw OpenAPI JSON is at `http://localhost:8000/app/api/openapi.json`.
-
-**Note:** The API is at `/app/api/` (not `/api/`) because Traefik does not strip the `/app` path prefix — Django receives and handles the full path.
+- **Path parameter type annotations**: When endpoint has both path param and body param, path param must be annotated as `uuid.UUID` (not `str`). Pydantic v2 strict mode rejects unannotated params.
+- **JWT token claims**: Tokens must include `sub` (user UUID, not email), `exp`, `iat`. Validated with RS256 asymmetric key.
+- **Migrations immutable**: Never modify applied migrations. Create new ones if changes are needed.
+- **Database query performance**: All model lists must use `select_related()`/`prefetch_related()` to prevent N+1. Tests should verify this.
+- **Settings import**: Ensure `import os` is present in `config/settings.py` (referenced by env vars).
+- **API path**: Must be mounted at `/app/api/` in URL config, not `/api/`. Traefik forwards full path without stripping.
