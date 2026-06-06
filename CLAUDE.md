@@ -193,10 +193,7 @@ class NFCTagController:
 
 ## Routing Validation
 
-The app backend's URL configuration enforces the Traefik routing contract: Traefik forwards
-all `/app/*` paths to this service **without stripping the prefix**. Django must handle the full
-path. If that contract is broken (e.g., someone adds a URL at `/admin/` instead of `/app/admin/`),
-the routing will silently work in direct-access mode but fail behind Traefik.
+The app backend's URL configuration enforces the Traefik routing contract: Traefik forwards all `/app/*` paths to this service **without stripping the prefix**. Django must handle the full path. See `.claude/rules/traefik-path-handling.md` for the complete contract and common mistakes. If broken, the routing will silently work in direct-access mode but fail behind Traefik.
 
 ### Health Check Endpoint
 
